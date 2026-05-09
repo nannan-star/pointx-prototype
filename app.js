@@ -1834,7 +1834,7 @@
       '<div class="login-page">' +
       '<div class="login-card">' +
       '<h1>控制台一期 MVP</h1>' +
-      '<p class="muted">可交互原型 · 双旅程演示</p>' +
+      '<p class="muted">可交互原型</p>' +
       '<form id="form-login">' +
       '<div class="role-pills">' +
       '<label><input type="radio" name="demoRole" value="super_admin" checked /><span>超级管理员</span></label>' +
