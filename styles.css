@@ -373,6 +373,15 @@ textarea {
   color: var(--sidebar-dark-text);
 }
 
+a.sidebar__footer-action--link {
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+a.sidebar__footer-action--link:hover {
+  text-decoration: none;
+}
+
 .sidebar__rail {
   flex-shrink: 0;
   display: flex;
@@ -469,6 +478,250 @@ textarea {
   background: #f1f5f9;
   border-radius: 4px;
   border: 1px solid var(--border);
+}
+
+/* ---- 原型说明 · Markdown（系统表单校验规则） ---- */
+.markdown-doc-panel {
+  max-width: 52rem;
+}
+
+.markdown-body {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+}
+
+.markdown-body h2 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 1.35rem 0 0.55rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.markdown-body h2:first-child {
+  margin-top: 0;
+}
+
+.markdown-body h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 1rem 0 0.45rem;
+  color: var(--text);
+}
+
+.markdown-body p {
+  margin: 0.4rem 0 0.65rem;
+  color: var(--text-muted);
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  margin: 0.25rem 0 0.75rem;
+  padding-left: 1.35rem;
+  color: var(--text-muted);
+}
+
+.markdown-body li {
+  margin: 0.35rem 0;
+}
+
+.markdown-body code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  background: #f1f5f9;
+  padding: 0.12em 0.4em;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  color: #0f172a;
+}
+
+.markdown-body strong {
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* ---- 系统表单校验规则：两栏 + 模块搜索锚定 ---- */
+.form-rules-toolbar {
+  margin-bottom: 1rem;
+  max-width: none;
+}
+
+.form-rules-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #f8fafc;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-rules-search:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.form-rules-search__icon {
+  display: flex;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.form-rules-search__input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  cursor: text;
+}
+
+.form-rules-search__input::placeholder {
+  color: #94a3b8;
+}
+
+.form-rules-toolbar__hint {
+  margin: 0.65rem 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.form-rules-split {
+  display: grid;
+  grid-template-columns: minmax(200px, 240px) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.form-rules-aside {
+  position: sticky;
+  top: 0.75rem;
+  align-self: start;
+  max-height: calc(100vh - 7.5rem);
+  overflow: auto;
+  margin-bottom: 0;
+}
+
+.form-rules-aside__title {
+  margin: 0 0 0.5rem;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.form-rules-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.form-rules-nav__link {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.form-rules-nav__link:hover {
+  background: #f1f5f9;
+}
+
+.form-rules-nav__link:focus {
+  outline: none;
+}
+
+.form-rules-nav__link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.form-rules-nav__link.is-active {
+  background: var(--primary-soft);
+  border-color: rgb(37 99 235 / 22%);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.form-rules-nav__link.is-hidden {
+  display: none;
+}
+
+.form-rules-nav-empty {
+  margin: 0.5rem 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.form-rules-main.markdown-doc-panel {
+  max-width: none;
+  margin-bottom: 0;
+  min-width: 0;
+}
+
+.form-rules-scroll {
+  min-width: 0;
+}
+
+.form-rules-section {
+  scroll-margin-top: 1rem;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.form-rules-section:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.form-rules-section__title {
+  margin: 0 0 0.65rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.form-rules-section__body.markdown-body > :first-child {
+  margin-top: 0;
+}
+
+@media (max-width: 900px) {
+  .form-rules-split {
+    grid-template-columns: 1fr;
+  }
+
+  .form-rules-aside {
+    position: static;
+    max-height: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .form-rules-nav__link,
+  .form-rules-search {
+    transition: none;
+  }
 }
 
 .toolbar {

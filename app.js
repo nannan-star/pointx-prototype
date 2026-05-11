@@ -17,6 +17,98 @@
       .replace(/"/g, '&quot;');
   }
 
+  /** 极简 Markdown：**加粗**、行内 code，先做 HTML 转义再替换 */
+  function formatMarkdownInlineRaw(line) {
+    var parts = String(line || '').split('`');
+    var i;
+    var out = '';
+    for (i = 0; i < parts.length; i++) {
+      if (i % 2 === 0) {
+        out += String(parts[i])
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      } else {
+        out += '<code>' + escapeHtml(parts[i]) + '</code>';
+      }
+    }
+    return out;
+  }
+
+  /** 块级：## / ### 标题、- 无序、1. 有序、空行分段，供静态说明页 */
+  function renderSimpleMarkdown(markdown) {
+    var lines = String(markdown || '')
+      .replace(/\r\n/g, '\n')
+      .split('\n');
+    var html = [];
+    var i = 0;
+    var inUl = false;
+    var inOl = false;
+    function closeLists() {
+      if (inUl) {
+        html.push('</ul>');
+        inUl = false;
+      }
+      if (inOl) {
+        html.push('</ol>');
+        inOl = false;
+      }
+    }
+    while (i < lines.length) {
+      var trimmed = String(lines[i] || '').trim();
+      if (trimmed === '') {
+        closeLists();
+        i++;
+        continue;
+      }
+      if (/^###\s+/.test(trimmed)) {
+        closeLists();
+        html.push('<h3>' + formatMarkdownInlineRaw(trimmed.replace(/^###\s+/, '')) + '</h3>');
+        i++;
+        continue;
+      }
+      if (/^##\s+/.test(trimmed)) {
+        closeLists();
+        html.push('<h2>' + formatMarkdownInlineRaw(trimmed.replace(/^##\s+/, '')) + '</h2>');
+        i++;
+        continue;
+      }
+      if (/^-\s+/.test(trimmed)) {
+        if (inOl) {
+          html.push('</ol>');
+          inOl = false;
+        }
+        if (!inUl) {
+          html.push('<ul>');
+          inUl = true;
+        }
+        html.push('<li>' + formatMarkdownInlineRaw(trimmed.replace(/^-\s+/, '')) + '</li>');
+        i++;
+        continue;
+      }
+      if (/^\d+\.\s+/.test(trimmed)) {
+        if (inUl) {
+          html.push('</ul>');
+          inUl = false;
+        }
+        if (!inOl) {
+          html.push('<ol>');
+          inOl = true;
+        }
+        html.push('<li>' + formatMarkdownInlineRaw(trimmed.replace(/^\d+\.\s+/, '')) + '</li>');
+        i++;
+        continue;
+      }
+      closeLists();
+      html.push('<p>' + formatMarkdownInlineRaw(trimmed) + '</p>');
+      i++;
+    }
+    closeLists();
+    return html.join('');
+  }
+
   /** 列表/只读展示：去掉 leading +国别号（其后须有空格/横线，避免误伤 +86138… 连体存储） */
   function displayPhoneNoCountryCode(phone) {
     if (phone == null || String(phone).trim() === '') return '—';
@@ -543,7 +635,7 @@
         buildProductImageUploadFieldHtml('pe') +
         '<div class="form-field"><label for="pe-region">国家/地区</label>' +
         '<input id="pe-region" placeholder="如：全球 / 中国大陆" /></div>' +
-        '<div class="form-field"><label for="pe-price">价格 *</label>' +
+        '<div class="form-field"><label for="pe-price"><span class="field-required-mark">*</span>价格</label>' +
         '<input id="pe-price" required placeholder="如：¥9,999 或面议" /></div>' +
         '<div class="form-field"><label for="pe-billing">计费方式</label>' +
         '<select id="pe-billing"><option value="连续计费" selected>连续计费</option></select></div>' +
@@ -790,7 +882,7 @@
       '<span class="drawer-edit-editable__hint">价格与库存可在此维护</span>' +
       '</div>' +
       '<div class="drawer-edit-editable__form">' +
-      '<div class="form-field"><label for="stemplate">规格名称 *</label>' +
+      '<div class="form-field"><label for="stemplate"><span class="field-required-mark">*</span>规格名称</label>' +
       '<input id="stemplate" required placeholder="如 导航SDK内置账号" value="' +
       escapeHtml(preset.template || '') +
       '" /></div>' +
@@ -835,10 +927,10 @@
     var specParts = parseSpecNameParts(preset.name || '');
     return (
       '<div class="drawer-form-stack">' +
-      '<div class="form-field"><label>商品 *</label><select id="sprod" required>' +
+      '<div class="form-field"><label><span class="field-required-mark">*</span>商品</label><select id="sprod" required>' +
       po +
       '</select></div>' +
-      '<div class="form-field"><label>规格 *</label><div style="display:flex;gap:0.5rem">' +
+      '<div class="form-field"><label><span class="field-required-mark">*</span>规格</label><div style="display:flex;gap:0.5rem">' +
       '<input id="sn" required placeholder="如 5" value="' +
       escapeHtml(specParts.value || '') +
       '" style="flex:1" />' +
@@ -853,10 +945,10 @@
       (specParts.unit === '年' ? ' selected' : '') +
       '>年</option>' +
       '</select></div></div>' +
-      '<div class="form-field"><label>规格名称 *</label><input id="stemplate" required placeholder="如 导航SDK内置账号" value="' +
+      '<div class="form-field"><label><span class="field-required-mark">*</span>规格名称</label><input id="stemplate" required placeholder="如 导航SDK内置账号" value="' +
       escapeHtml(preset.template || '') +
       '" /></div>' +
-      '<div class="form-field"><label>PN号 *</label><input id="spn" required placeholder="Part Number，用于标识该规格的物料编码" value="' +
+      '<div class="form-field"><label><span class="field-required-mark">*</span>PN号</label><input id="spn" required placeholder="Part Number，用于标识该规格的物料编码" value="' +
       escapeHtml(preset.pn || '') +
       '" /></div>' +
       '<div class="form-field"><label>币种</label><select id="scur">' +
@@ -1177,13 +1269,13 @@
     saveOverlay(overlay);
   }
 
-  /** 套餐「最大在线数」：留空表示不维护；有值则须为 [1,999] 正整数 */
+  /** 套餐「最大在线数」：留空表示不维护；有值则须为 [1,100000] 正整数 */
   function parseOptionalMaxOnlineInput(raw) {
     var maxRaw = raw != null ? String(raw).trim() : '';
     if (maxRaw === '') return { ok: true, value: null };
     if (!/^\d+$/.test(maxRaw)) return { ok: false };
     var n = parseInt(maxRaw, 10);
-    if (n < 1 || n > 999) return { ok: false };
+    if (n < 1 || n > 100000) return { ok: false };
     return { ok: true, value: n };
   }
 
@@ -1801,6 +1893,18 @@
       '</span>' +
       '<span class="sidebar__footer-action-text">清除演示写入（恢复种子）</span>' +
       '</button>' +
+      (role === 'super_admin'
+        ? '<div class="sidebar__footer-cap">原型说明</div>' +
+          '<a class="sidebar__footer-action sidebar__footer-action--link" href="#/admin/data/form-validation-rules">' +
+          '<span class="sidebar__node-icon">' +
+          '<svg class="sidebar__ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+          '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>' +
+          '<path d="M14 2v6h6"/>' +
+          '<path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/>' +
+          '</svg></span>' +
+          '<span class="sidebar__footer-action-text">系统表单校验规则</span>' +
+          '</a>'
+        : '') +
       '</div></div>' +
       '<div class="sidebar__rail">' +
       '<button type="button" class="sidebar__pin" id="btn-sidebar-collapse" title="收起 / 展开侧栏" aria-label="收起或展开侧栏">' +
@@ -3076,6 +3180,16 @@
     return ent ? ent.id : '—';
   }
 
+  /** 按企业名称解析企业 ID（用于链接至公司详情）；无匹配时返回空字符串 */
+  function lookupEnterpriseIdForHref(companyName) {
+    var c = companyName != null ? String(companyName).trim() : '';
+    if (!c) return '';
+    var ent = getData().enterprises.find(function (e) {
+      return e.name === c;
+    });
+    return ent && ent.id != null ? String(ent.id) : '';
+  }
+
   /** 详情页顶部返回（满宽平铺，与资源信息列表页一致） */
   function entityDetailBackToolbar(href, label) {
     var icon =
@@ -4277,7 +4391,7 @@
         '" />';
     } else {
       companyFieldHtml =
-        '<div class="form-field"><label for="po-company">企业名称 *</label>' +
+        '<div class="form-field"><label for="po-company"><span class="field-required-mark">*</span>企业名称</label>' +
         '<select id="po-company" required>' +
         eo +
         '</select></div>';
@@ -4295,21 +4409,21 @@
         '</div>' +
         '<div class="drawer-edit-editable__form">' +
         companyFieldHtml +
-        '<div class="form-field"><label for="pot">商品类型 *</label><select id="pot" required>' +
+        '<div class="form-field"><label for="pot"><span class="field-required-mark">*</span>商品类型</label><select id="pot" required>' +
         '<option value="SDK" selected>SDK</option>' +
         '<option value="CORS账号">CORS账号</option></select></div>' +
-        '<div class="form-field"><label for="po-prod">商品 *</label><select id="po-prod" required>' +
+        '<div class="form-field"><label for="po-prod"><span class="field-required-mark">*</span>商品</label><select id="po-prod" required>' +
         poProdHtml +
         '</select></div>' +
-        '<div class="form-field"><label for="po-spec">商品规格 *</label><select id="po-spec" required>' +
+        '<div class="form-field"><label for="po-spec"><span class="field-required-mark">*</span>商品规格</label><select id="po-spec" required>' +
         initialSpecs +
         '</select></div>' +
         '<div id="pool-ord-sdk-block" class="drawer-form-stack">' +
-        '<div class="form-field"><label for="po-sdk-qty">数量 *</label>' +
+        '<div class="form-field"><label for="po-sdk-qty"><span class="field-required-mark">*</span>数量</label>' +
         '<input id="po-sdk-qty" type="number" min="1" step="1" value="10" /></div>' +
         '</div>' +
         '<div id="pool-ord-ext-block" class="drawer-form-stack" style="display:none">' +
-        '<div class="form-field"><label for="po-ext-qty">数量 *</label>' +
+        '<div class="form-field"><label for="po-ext-qty"><span class="field-required-mark">*</span>数量</label>' +
         '<input id="po-ext-qty" type="number" min="1" step="1" value="10" /></div>' +
         '</div>' +
         '<div class="form-field"><label for="po-sap">客户参考(SAP)</label>' +
@@ -4690,7 +4804,7 @@
     openDrawer(
       '开通账号',
       '<div class="drawer-form-stack">' +
-        '<div class="form-field"><label for="soa-company">企业名称 *</label><select id="soa-company" required' +
+        '<div class="form-field"><label for="soa-company"><span class="field-required-mark">*</span>企业名称</label><select id="soa-company" required' +
         (fixedClientCo ? ' disabled' : '') +
         '>' +
         eo +
@@ -4699,15 +4813,15 @@
           ? '<p class="drawer-field-hint" style="margin:0.35rem 0 0">大客户视角下固定为当前登录企业。</p>'
           : '') +
         '</div>' +
-        '<div class="form-field"><label for="soa-prod">商品 *</label><select id="soa-prod" required>' +
+        '<div class="form-field"><label for="soa-prod"><span class="field-required-mark">*</span>商品</label><select id="soa-prod" required>' +
         poProdHtml +
         '</select></div>' +
-        '<div class="form-field"><label for="soa-spec">商品规格 *</label><select id="soa-spec" required>' +
+        '<div class="form-field"><label for="soa-spec"><span class="field-required-mark">*</span>商品规格</label><select id="soa-spec" required>' +
         initialSpecs +
         '</select></div>' +
         '<div class="form-field form-field--sn-bind">' +
         '<div class="sn-bind-field-head">' +
-        '<label for="soa-sn">绑定 SN *</label>' +
+        '<label for="soa-sn"><span class="field-required-mark">*</span>绑定 SN</label>' +
         '<button type="button" class="sn-bind-template-link" id="soa-sn-template">' +
         '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4"/></svg>' +
         '下载模板</button></div>' +
@@ -4890,7 +5004,7 @@
     openDrawer(
       '开通账号',
       '<div class="drawer-form-stack">' +
-        '<div class="form-field"><label for="coa-company">企业名称 *</label><select id="coa-company" required' +
+        '<div class="form-field"><label for="coa-company"><span class="field-required-mark">*</span>企业名称</label><select id="coa-company" required' +
         (fixedClientCo ? ' disabled' : '') +
         '>' +
         eo +
@@ -4899,13 +5013,13 @@
           ? '<p class="drawer-field-hint" style="margin:0.35rem 0 0">大客户视角下固定为当前登录企业。</p>'
           : '') +
         '</div>' +
-        '<div class="form-field"><label for="coa-prod">商品 *</label><select id="coa-prod" required>' +
+        '<div class="form-field"><label for="coa-prod"><span class="field-required-mark">*</span>商品</label><select id="coa-prod" required>' +
         poProdHtml +
         '</select></div>' +
-        '<div class="form-field"><label for="coa-spec">商品规格 *</label><select id="coa-spec" required>' +
+        '<div class="form-field"><label for="coa-spec"><span class="field-required-mark">*</span>商品规格</label><select id="coa-spec" required>' +
         initialSpecs +
         '</select></div>' +
-        '<div class="form-field"><label for="coa-qty">数量 *</label>' +
+        '<div class="form-field"><label for="coa-qty"><span class="field-required-mark">*</span>数量</label>' +
         '<input id="coa-qty" type="number" min="1" step="1" value="10" />' +
         '<p class="drawer-field-hint">会查询该客户当前选中规格下面实际可用资源数量然后显示在这儿。</p></div>' +
         '<div class="form-field"><label for="coa-remark">备注</label>' +
@@ -5198,62 +5312,6 @@
     return '<span class="' + cls + '">' + esc + '</span>';
   }
 
-  function openSdkTroubleshootDrawer(sdkResKey) {
-    var row = findSdkResourceBySdkResKey(sdkResKey);
-    if (!row) {
-      toast('未找到该 SDK 资源', 'error');
-      return;
-    }
-    var akShow = hideClientSdkIdentityColsGlobal()
-      ? '—'
-      : row.ak != null && String(row.ak).trim() !== ''
-        ? String(row.ak)
-        : '—';
-    function line(dt, dd) {
-      return (
-        '<div><dt>' +
-        escapeHtml(dt) +
-        '</dt><dd>' +
-        escapeHtml(dd) +
-        '</dd></div>'
-      );
-    }
-    var tsTitle = String(row.regCode || '').trim() || row.instance || sdkResKey || '—';
-    var regShow =
-      String(row.activateStatus || '').trim() === '已激活' && String(row.regCode || '').trim()
-        ? String(row.regCode).trim()
-        : '激活后生成';
-    openDrawer(
-      '排障助手 · ' + tsTitle,
-      '<div class="drawer-form-stack">' +
-        '<p class="drawer-field-hint" style="margin:0">以下为演示指引，可按注册码与设备信息核对环境与凭证。</p>' +
-        '<div class="panel" style="padding:0.75rem 1rem;margin-top:0.5rem">' +
-        '<dl class="desc-list">' +
-        line('注册码', regShow) +
-        line('设备 ID/SN', row.sn || '—') +
-        line('设备类型', row.deviceType != null && String(row.deviceType).trim() !== '' ? String(row.deviceType).trim() : '—') +
-        '<div><dt>' +
-        escapeHtml('激活状态') +
-        '</dt><dd>' +
-        sdkResourceActivateStatusTagHtml(row.activateStatus) +
-        '</dd></div>' +
-        '<div><dt>' +
-        escapeHtml('服务状态') +
-        '</dt><dd>' +
-        sdkResourceServiceStatusTagHtml(row.status) +
-        '</dd></div>' +
-        line('应用标识 AK', akShow) +
-        '</dl></div>' +
-        '<ul style="margin:0.75rem 0 0;padding-left:1.15rem;font-size:13px;line-height:1.65;color:#475569">' +
-        '<li>核对设备 SN 与注册码绑定是否一致</li>' +
-        '<li>检查 Ntrip 账号与网络出口策略</li>' +
-        '<li>确认激活方式与入库方式是否符合当前版本要求</li>' +
-        '</ul></div>',
-      null,
-      { readonly: true }
-    );
-  }
-
   /** CORS 账号详情抽屉（布局与套餐详情 buildPackageDetailDrawerHtml 一致的 drawer-detail 风格） */
   function buildCorsDetailDrawerHtml(row) {
     if (!row) return '';
@@ -5351,7 +5409,7 @@
       { primaryLabel: '保存' }
     );
   }
-  /** 大客户登录时详情/排障内不展示 AK（演示脱敏） */
+  /** 大客户登录时详情抽屉内不展示 AK（演示脱敏） */
   function hideClientSdkIdentityColsGlobal() {
     try {
       var s = getSession();
@@ -5396,7 +5454,19 @@
         );
         if (!hideClientSdkIdentityCols) {
           parts.push('<td>' + sdkResCell(r.company) + '</td>');
-          parts.push('<td>' + sdkResCell(r.instance) + '</td>');
+          var entIdHref = lookupEnterpriseIdForHref(r.company);
+          var instRaw = r.instance != null ? String(r.instance).trim() : '';
+          if (entIdHref && instRaw) {
+            parts.push(
+              '<td><a class="table-link" href="#/admin/enterprises/' +
+                encodeURIComponent(entIdHref) +
+                '">' +
+                escapeHtml(instRaw) +
+                '</a></td>'
+            );
+          } else {
+            parts.push('<td>' + sdkResCell(r.instance) + '</td>');
+          }
         }
         parts.push('<td>' + sdkResCell(r.sn) + '</td>');
         parts.push('<td>' + sdkResCell(r.deviceType) + '</td>');
@@ -5529,13 +5599,13 @@
     if (isClientView) {
       pageSub =
         listKind === 'sdk'
-          ? '大客户视图不展示企业名称、实例名称；应用标识 AK 可在「详情」中查看（演示脱敏）；注册码仅已激活账号具备，列表默认遮挡，请点击眼睛图标查看完整码；首列可勾选后使用「批量」备注或激活。'
+          ? '大客户视图不展示企业名称、实例名称；应用标识 AK 可在「详情」中查看（演示脱敏）；注册码仅已激活账号具备，列表默认遮挡，请点击眼睛图标查看完整码；首列可勾选后使用「批量操作」激活。'
           : '外置 CORS 账号明细；大客户视图不展示企业名称列；筛选逻辑不变（演示）。';
     } else {
       pageSub =
         listKind === 'sdk'
-          ? 'SDK 履约资源明细；应用标识 AK 请在行内「详情」中查看；注册码仅已激活账号具备，列表默认密文，请点击眼睛图标显示明文；首列勾选后可用「批量」统一备注或激活未激活项；侧栏可切换「CORS 账号」。'
-          : 'CORS 外置账号资源明细；本页可开通 CORS 账号，并查看账号消耗情况；如需 SDK 履约资源，请在侧栏切换「SDK 资源」。';
+          ? 'SDK 履约资源明细；应用标识 AK 请在行内「详情」中查看；注册码仅已激活账号具备，列表默认密文，请点击眼睛图标显示明文；首列勾选后可用「批量操作」激活未激活项；'
+          : 'CORS 外置账号资源明细；本页可开通 CORS 账号，并查看账号消耗情况；';
     }
     var sdkTable =
       '<div class="table-wrap" id="sdk-resource-table-wrap"><table class="data-table data-table--wide"><thead><tr>' +
@@ -5585,9 +5655,8 @@
       (listKind === 'sdk'
         ? '<div class="toolbar-spacer"></div>' +
           '<div class="toolbar-batch">' +
-          '<button type="button" class="btn" id="btn-sdk-batch" aria-expanded="false" aria-haspopup="menu" aria-controls="sdk-batch-menu">批量</button>' +
+          '<button type="button" class="btn" id="btn-sdk-batch" aria-expanded="false" aria-haspopup="menu" aria-controls="sdk-batch-menu">批量操作</button>' +
           '<div class="toolbar-batch__menu" id="sdk-batch-menu" role="menu" hidden>' +
-          '<button type="button" class="toolbar-batch__menu-item" role="menuitem" id="sdk-batch-remark">批量备注</button>' +
           '<button type="button" class="toolbar-batch__menu-item" role="menuitem" id="sdk-batch-activate">批量激活</button>' +
           '</div></div>' +
           '<button type="button" class="btn btn--primary" id="btn-sdk-open-account">开通账号</button>'
@@ -5762,12 +5831,12 @@
     openDrawer(
       '编辑字典项',
       '<div class="drawer-form-stack">' +
-        '<div class="form-field"><label for="dict-e-etype">枚举类型</label>' +
-        '<input id="dict-e-etype" readonly class="drawer-readonly-field" value="' +
+        '<div class="form-field"><label for="dict-e-etype"><span class="field-required-mark">*</span>枚举类型</label>' +
+        '<input id="dict-e-etype" readonly required class="drawer-readonly-field" value="' +
         escapeHtml(d.enumType || '') +
         '" /></div>' +
-        '<div class="form-field"><label for="dict-e-pk">主键</label>' +
-        '<input id="dict-e-pk" readonly class="drawer-readonly-field" value="' +
+        '<div class="form-field"><label for="dict-e-pk"><span class="field-required-mark">*</span>主键</label>' +
+        '<input id="dict-e-pk" readonly required class="drawer-readonly-field" value="' +
         escapeHtml(pkStr) +
         '" /></div>' +
         '<div class="form-field"><label for="dict-e-val"><span class="field-required-mark">*</span>值</label>' +
@@ -5806,6 +5875,252 @@
       },
       { primaryLabel: '保存' }
     );
+  }
+
+  /** 将「系统表单校验规则」Markdown 按二级标题拆成模块（用于侧栏导航与锚定） */
+  function formRulesParseModules(markdown) {
+    var lines = String(markdown || '')
+      .replace(/\r\n/g, '\n')
+      .split('\n');
+    var modules = [];
+    var cur = null;
+    var i;
+    for (i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      if (/^##\s+/.test(line)) {
+        if (cur) modules.push(cur);
+        cur = { title: line.replace(/^##\s+/, '').trim(), bodyLines: [] };
+      } else if (cur) {
+        cur.bodyLines.push(line);
+      }
+    }
+    if (cur) modules.push(cur);
+    return modules.map(function (m, idx) {
+      var body = m.bodyLines.join('\n').replace(/^\n+/, '').replace(/\n+$/, '');
+      return { id: 'form-rules-mod-' + idx, title: m.title, body: body };
+    });
+  }
+
+  /** 侧栏「原型说明」· 系统表单校验规则页（Markdown 正文） */
+  var FORM_VALIDATION_RULES_MD = [
+    '## 说明',
+    '本文档归纳**控制台一期**各业务表单在原型与落地实现中的**校验边界**（必填、长度、数值范围、格式、互斥关系等）。若与冻结版 PRD 或接口契约冲突，以评审结论为准。',
+    '- **前后端**：下列为**应对齐的默认边界**；服务端为最终权威，前端可做等价或略严提示。',
+    '',
+    '## 全局规则',
+    '- **备注**：若表单提供备注字段，长度不得超过 **255** 个字符。',
+    '',
+    '## 资源中心',
+    '### 实例',
+    '- **实例名称**：必填；长度不得超过 **50** 个字符；同一**企业**下宜唯一。',
+    '- **设备自动入库、激活方式**：须为允许枚举项。',
+    '- **帐号前缀**：选填；若填写，须为 **4 位小写字母**。',
+    '',
+    '### 资源池',
+    '- **下单 / 续费**：企业、实例、商品、规格必选，且须为**已存在**且当前账号有权操作的数据。',
+    '- **数量**：必填；请输入 **[1, 100000]** 之间的整数。',
+    '- **客户参考(SAP)**：必填；长度不得超过 **50** 个字符。',
+    '',
+    '### SDK 资源',
+    '- **开通账号**：企业名称、商品与规格必选，须与当前企业和可售配置一致；数量边界同资源池下单。',
+    '',
+    '### CORS 账号',
+    '- **开通账号**：企业名称、商品与规格必选，须与当前企业和可售配置一致；数量边界同资源池下单。',
+    '',
+    '## 交易中心',
+    '### 订单列表',
+    '- **订单列表 / 订单详情**：主路径以**只读**为主；筛选中若含日期、金额**区间**，须满足 **起 ≤ 止**。',
+    '',
+    '### 对账管理',
+    '',
+    '## 配置中心',
+    '### 服务节点',
+    '- **节点名称**：必填；长度不得超过 **50** 个字符。',
+    '- **节点类型**：必填；下拉选项。',
+    '- **业务编码**：必填；仅支持输入数字，长度不超过 **8** 位。',
+    '- **服务地址**：必填；长度不得超过 **50** 个字符。',
+    '',
+    '### 服务套餐',
+    '- **套餐名称**：必填；长度不得超过 **50** 个字符。',
+    '- **服务节点、商品类型**：必填；下拉选择。',
+    '- **端口**：必填；请输入 **1～65535** 之间的整数。',
+    '- **源列表**：必填；长度不得超过 **50** 个字符。',
+    '- **最大在线数**：必填；请输入 **[1, 100000]** 之间的整数。',
+    '',
+    '### 商品',
+    '- **商品名称**：必填，长度不得超过 **50** 个字符。',
+    '- **产品线**：必填；下拉选项；默认云芯产品线。',
+    '- **服务配置**：必填；至少配置 **1** 套。',
+    '',
+    '### 商品规格',
+    '- **规格名称**：必填，长度不得超过 **50** 个字符。',
+    '- **规格编码**：建议 **2～64** 字，平台内唯一；字符集以 PRD 为准（常见：字母数字与连字符）。',
+    '- **绑定关系**：商品—规格—套餐须避免重复绑定与非法组合（业务层校验）。',
+    '',
+    '## 系统管理',
+    '### 企业用户',
+    '- **企业名称**：必填，建议 **2～100** 字；平台内宜**唯一**（由后端保证）。',
+    '- **企业联系人**：建议 **1～64** 字；可为空时须在 PRD 声明。',
+    '- **手机 / 邮箱**：若填写须通过**格式校验**（手机可含国际区号；邮箱采用项目约定的 RFC5322 子集）。',
+    '',
+    '### 管理用户',
+    '- **状态、角色**：必须来自字典或固定集合，禁止任意字符串写入。',
+    '',
+    '### 角色权限',
+    '- **角色、权限标识**：必须来自字典或固定集合，禁止任意字符串写入。',
+    '',
+    '### 菜单管理',
+    '- **菜单类型、权限标识**：必须来自字典或固定集合，禁止任意字符串写入。',
+    '',
+    '### 字典管理',
+    '- **枚举类型**：必填，建议 `questionType` 风格 **1～64** 字（字母、数字、`.`、`_`）。',
+    '- **主键**：须在**同一枚举类型**下唯一。',
+    '- **字典值与排序**：值（展示文案）必填，建议 **1～200** 字；排序建议范围 **-999999～999999**（视存储类型调整）；描述建议 **≤ 500** 字。',
+    '',
+    '## 个人中心',
+    '### 个人信息',
+    '- **手机、邮箱**：若可编辑，须重复格式校验。',
+    '',
+    '### 修改密码',
+    '- **当前密码、新密码、确认新密码**：新密码须满足复杂度与长度；**新密码** 与 **确认新密码** 必须一致；可选规则：新密码不可与当前密码相同。'
+  ].join('\n');
+
+  var FORM_RULES_SEARCH_ICON =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<circle cx="11" cy="11" r="7"/>' +
+    '<path d="m21 21-3.5-3.5"/>' +
+    '</svg>';
+
+  function renderFormValidationRulesDoc() {
+    var mods = formRulesParseModules(FORM_VALIDATION_RULES_MD);
+    var navItems = mods
+      .map(function (m, mi) {
+        return (
+          '<button type="button" class="form-rules-nav__link"' +
+          ' id="form-rules-nav-btn-' +
+          mi +
+          '" data-form-rules-anchor="' +
+          escapeHtml(m.id) +
+          '" data-filter-text="' +
+          escapeHtml(m.title) +
+          '">' +
+          escapeHtml(m.title) +
+          '</button>'
+        );
+      })
+      .join('');
+    var sections = mods
+      .map(function (m) {
+        return (
+          '<section id="' +
+          escapeHtml(m.id) +
+          '" class="form-rules-section" tabindex="-1" aria-labelledby="' +
+          escapeHtml(m.id) +
+          '-title">' +
+          '<h2 class="form-rules-section__title" id="' +
+          escapeHtml(m.id) +
+          '-title">' +
+          escapeHtml(m.title) +
+          '</h2>' +
+          '<div class="form-rules-section__body markdown-body">' +
+          renderSimpleMarkdown(m.body) +
+          '</div></section>'
+        );
+      })
+      .join('');
+    return (
+      '<div class="form-rules-page" id="form-rules-page">' +
+      '<h1 class="page-title">系统表单校验规则</h1>' +
+      '<div class="panel form-rules-toolbar">' +
+      '<div class="form-rules-split">' +
+      '<aside class="panel form-rules-aside" aria-label="模块导航">' +
+      '<p class="form-rules-aside__title">模块</p>' +
+      '<nav class="form-rules-nav" id="form-rules-nav-list">' +
+      navItems +
+      '</nav>' +
+      '<p class="form-rules-nav-empty" id="form-rules-nav-empty" hidden>无匹配模块，请调整关键词。</p>' +
+      '</aside>' +
+      '<div class="panel form-rules-main markdown-doc-panel">' +
+      '<div class="form-rules-scroll" id="form-rules-scroll-area">' +
+      sections +
+      '</div></div></div></div>'
+    );
+  }
+
+  function mountFormRulesPageInteractions() {
+    var page = document.getElementById('form-rules-page');
+    if (!page || page.dataset.formRulesBound === '1') return;
+    page.dataset.formRulesBound = '1';
+    var search = document.getElementById('form-rules-module-search');
+    var nav = document.getElementById('form-rules-nav-list');
+    var emptyEl = document.getElementById('form-rules-nav-empty');
+    var reduced = false;
+    try {
+      reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch (eR) {}
+
+    function setActiveNav(id) {
+      if (!nav) return;
+      nav.querySelectorAll('.form-rules-nav__link').forEach(function (btn) {
+        var match = btn.getAttribute('data-form-rules-anchor') === id;
+        btn.classList.toggle('is-active', match);
+        if (match) btn.setAttribute('aria-current', 'true');
+        else btn.removeAttribute('aria-current');
+      });
+    }
+
+    function scrollToModule(id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      try {
+        el.focus({ preventScroll: true });
+      } catch (eF) {
+        el.focus();
+      }
+      el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+      setActiveNav(id);
+    }
+
+    if (nav) {
+      nav.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-form-rules-anchor]');
+        if (!btn) return;
+        e.preventDefault();
+        var id = btn.getAttribute('data-form-rules-anchor');
+        if (id) scrollToModule(id);
+      });
+    }
+
+    function applyModuleFilter() {
+      if (!nav) return;
+      var q = (search && search.value ? search.value : '').trim().toLowerCase();
+      var links = nav.querySelectorAll('[data-form-rules-anchor]');
+      var n = 0;
+      links.forEach(function (btn) {
+        var t = (btn.getAttribute('data-filter-text') || '').toLowerCase();
+        var show = !q || t.indexOf(q) >= 0;
+        btn.classList.toggle('is-hidden', !show);
+        if (show) n++;
+      });
+      if (emptyEl) emptyEl.hidden = n > 0;
+    }
+
+    if (search) {
+      search.addEventListener('input', applyModuleFilter);
+      search.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        var first = nav && nav.querySelector('.form-rules-nav__link:not(.is-hidden)');
+        if (first) {
+          var fid = first.getAttribute('data-form-rules-anchor');
+          if (fid) scrollToModule(fid);
+        }
+      });
+    }
+
+    var sectionEls = page.querySelectorAll('.form-rules-section');
+    applyModuleFilter();
+    if (sectionEls.length) setActiveNav(sectionEls[0].id);
   }
 
   function renderDict() {
@@ -6245,7 +6560,6 @@
       .join('');
     return (
       '<h1 class="page-title">管理用户</h1>' +
-      '<p class="page-sub">系统管理 · 平台运营账号；创建/详情为右侧抽屉（与实例/企业模块一致）。</p>' +
       '<div class="toolbar">' +
       '<span style="font-size:13px;color:var(--text-muted)">共 ' +
       rows.length +
@@ -6378,7 +6692,6 @@
     return (
       '<div id="role-page-root">' +
       '<h1 class="page-title">角色权限</h1>' +
-      '<p class="page-sub">列表与操作列：编辑、菜单权限、数据权限（右侧抽屉）。</p>' +
       '<div class="toolbar toolbar--end">' +
       '<button type="button" class="btn btn--primary" id="btn-role-new">新增</button></div>' +
       '<div class="table-wrap" id="role-table-wrap"><table class="data-table"><thead><tr><th>角色名称</th><th>角色标识</th><th class="table-num">显示顺序</th><th>备注</th><th>创建时间</th><th class="cell-actions">操作</th></tr></thead><tbody>' +
@@ -6552,7 +6865,6 @@
     return (
       '<div id="menu-mgmt-page-root">' +
       '<h1 class="page-title">菜单管理</h1>' +
-      '<p class="page-sub">菜单结构与<strong>超级管理员侧栏</strong>一致（由 <code>ADMIN_NAV</code> 生成）；左侧筛选，右侧操作。角色权限中的菜单勾选树仍为独立演示数据。</p>' +
       '<div class="toolbar menu-mgmt-toolbar">' +
       '<div class="menu-mgmt-toolbar__filters">' +
       '<label class="menu-mgmt-filter-label"><span class="menu-mgmt-filter-cap">菜单名称</span>' +
@@ -7029,6 +7341,8 @@
       if (segs[0] === 'admin' && segs[1] === 'system' && segs[2] === 'admins') return renderAdminUsers();
       if (segs[0] === 'admin' && segs[1] === 'system' && segs[2] === 'roles') return renderRoleManagement();
       if (segs[0] === 'admin' && segs[1] === 'system' && segs[2] === 'menus') return renderMenuManagement();
+      if (segs[0] === 'admin' && segs[1] === 'data' && segs[2] === 'form-validation-rules')
+        return renderFormValidationRulesDoc();
       if (segs[0] === 'admin' && segs[1] === 'system' && segs[2] === 'dict') return renderDict();
       if (segs[0] === 'admin' && segs[1] === 'profile' && !segs[2]) return renderAdminProfile();
       if (segs[0] === 'admin' && segs[1] === 'profile' && segs[2] === 'password') return renderAdminProfile();
@@ -7140,6 +7454,9 @@
           render();
         });
       });
+    }
+    if (path === '/admin/data/form-validation-rules') {
+      mountFormRulesPageInteractions();
     }
     var aside = document.getElementById('app-sidebar');
     if (aside) {
@@ -7303,34 +7620,6 @@
     });
   }
 
-  function openSdkBatchRemarkDrawer() {
-    var keys = getCheckedSdkResKeysFromDom();
-    if (!keys.length) {
-      toast('请先勾选需要批量备注的资源', 'warn');
-      return;
-    }
-    openDrawer(
-      '批量备注',
-      '<div class="drawer-form-stack">' +
-        '<p class="drawer-field-hint" style="margin:0">将为已勾选的 <strong>' +
-        keys.length +
-        '</strong> 条资源写入相同备注（演示）。</p>' +
-        '<div class="form-field"><label for="sdk-batch-remark-ta">备注内容</label>' +
-        '<textarea id="sdk-batch-remark-ta" class="drawer-edit-editable__textarea" rows="4" placeholder="输入备注"></textarea></div>' +
-        '</div>',
-      function (dr, close) {
-        var v = dr.querySelector('#sdk-batch-remark-ta').value.trim();
-        keys.forEach(function (k) {
-          saveSdkResourcePatch(k, { remark: v });
-        });
-        toast('已批量更新备注（演示）', 'success');
-        close();
-        render();
-      },
-      { primaryLabel: '应用到勾选行' }
-    );
-  }
-
   function runSdkBatchActivate() {
     var keys = getCheckedSdkResKeysFromDom();
     if (!keys.length) {
@@ -7367,7 +7656,6 @@
     var toggle = document.getElementById('btn-sdk-batch');
     var menu = document.getElementById('sdk-batch-menu');
     var selAll = document.getElementById('sdk-batch-select-all');
-    var itemRemark = document.getElementById('sdk-batch-remark');
     var itemAct = document.getElementById('sdk-batch-activate');
     if (!toggle || !menu) return;
     toggle.onclick = function (e) {
@@ -7376,12 +7664,6 @@
       menu.hidden = !willOpen;
       toggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
     };
-    if (itemRemark) {
-      itemRemark.onclick = function () {
-        closeSdkBatchMenu();
-        openSdkBatchRemarkDrawer();
-      };
-    }
     if (itemAct) {
       itemAct.onclick = function () {
         closeSdkBatchMenu();
@@ -7421,9 +7703,8 @@
         return;
       }
       var tsBtn = e.target.closest('[data-sdk-troubleshoot]');
-      if (tsBtn && !tsBtn.disabled) {
-        var rct = tsBtn.getAttribute('data-sdk-troubleshoot');
-        if (rct) openSdkTroubleshootDrawer(rct);
+      if (tsBtn && !tsBtn.disabled && tsBtn.getAttribute('aria-disabled') !== 'true') {
+        toast('二期功能，暂未设计', 'warn');
         return;
       }
       var acBtn = e.target.closest('[data-sdk-activate]');
@@ -7665,10 +7946,10 @@
           openDrawer(
             '新增企业用户',
             '<div class="form-grid">' +
-              '<div class="form-field"><label>姓名 *</label><input id="de-contact" required /></div>' +
-              '<div class="form-field"><label>企业名称 *</label><input id="de-name" required /></div>' +
-              '<div class="form-field"><label>手机号 *</label><input id="de-phone" required /></div>' +
-              '<div class="form-field"><label>邮箱 *</label><input id="de-email" type="email" required /></div>' +
+              '<div class="form-field"><label><span class="field-required-mark">*</span>姓名</label><input id="de-contact" required /></div>' +
+              '<div class="form-field"><label><span class="field-required-mark">*</span>企业名称</label><input id="de-name" required /></div>' +
+              '<div class="form-field"><label><span class="field-required-mark">*</span>手机号</label><input id="de-phone" required /></div>' +
+              '<div class="form-field"><label><span class="field-required-mark">*</span>邮箱</label><input id="de-email" type="email" required /></div>' +
               '<div class="form-field"><label>所属行业</label>' +
               '<select id="de-industry" class="btn" style="width:100%;text-align:left;padding:0.45rem 0.6rem">' +
               '<option value="">请选择（可选）</option>' +
@@ -7732,16 +8013,16 @@
           openDrawer(
             '编辑企业客户',
             '<div class="form-grid">' +
-              '<div class="form-field"><label>姓名 *</label><input id="ee-contact" value="' +
+              '<div class="form-field"><label><span class="field-required-mark">*</span>姓名</label><input id="ee-contact" value="' +
               escapeHtml(row.contact) +
               '" required /></div>' +
-              '<div class="form-field"><label>企业名称 *</label><input id="ee-name" value="' +
+              '<div class="form-field"><label><span class="field-required-mark">*</span>企业名称</label><input id="ee-name" value="' +
               escapeHtml(row.name) +
               '" required /></div>' +
-              '<div class="form-field"><label>手机号 *</label><input id="ee-phone" value="' +
+              '<div class="form-field"><label><span class="field-required-mark">*</span>手机号</label><input id="ee-phone" value="' +
               escapeHtml(row.phone) +
               '" required /></div>' +
-              '<div class="form-field"><label>邮箱 *</label><input id="ee-email" type="email" value="' +
+              '<div class="form-field"><label><span class="field-required-mark">*</span>邮箱</label><input id="ee-email" type="email" value="' +
               escapeHtml(row.email) +
               '" required /></div>' +
               '<div class="form-field"><label>所属行业</label>' +
@@ -7763,7 +8044,7 @@
               (row.industry === '其他' ? ' selected' : '') +
               '>其他</option>' +
               '</select></div>' +
-              '<div class="form-field"><label>主账号 *</label><input id="ee-account" value="' +
+              '<div class="form-field"><label><span class="field-required-mark">*</span>主账号</label><input id="ee-account" value="' +
               escapeHtml(row.account) +
               '" required /></div>' +
               '<div class="form-field"><label>备注</label><input id="ee-remark" value="' +
@@ -7961,11 +8242,11 @@
             '<div class="drawer-form-stack drawer-form-stack--node-edit">' +
               '<div class="drawer-form-section">' +
               '<p class="drawer-form-section__title">基础信息</p>' +
-              '<div class="form-field"><label for="pn">套餐名称 *</label><input id="pn" required placeholder="套餐名称" /></div>' +
-              '<div class="form-field"><label for="pnode">服务节点 *</label><select id="pnode" required>' +
+              '<div class="form-field"><label for="pn"><span class="field-required-mark">*</span>套餐名称</label><input id="pn" required placeholder="套餐名称" /></div>' +
+              '<div class="form-field"><label for="pnode"><span class="field-required-mark">*</span>服务节点</label><select id="pnode" required>' +
               opts +
               '</select></div>' +
-              '<div class="form-field"><label for="pspec">商品类型 *</label><select id="pspec" required>' +
+              '<div class="form-field"><label for="pspec"><span class="field-required-mark">*</span>商品类型</label><select id="pspec" required>' +
               '<option value="SDK" selected>SDK</option>' +
               '<option value="CORS账号">CORS账号</option>' +
               '<option value="一键固定">一键固定</option>' +
@@ -7981,21 +8262,21 @@
               '<p id="pkg-port-live" class="visually-hidden" aria-live="polite"></p>' +
               '</div>' +
               '<div id="pkg-derived-fields" class="pkg-derived-fields pkg-derived-fields--locked">' +
-              '<div class="form-field"><label for="pcoord">坐标系</label><input id="pcoord" placeholder="—" autocomplete="off" readonly /></div>' +
-              '<div class="form-field"><label for="pmount">可用挂载点</label><input id="pmount" placeholder="—" autocomplete="off" readonly /></div>' +
-              '<div class="form-field"><label for="ptsl">是否启用tsl</label><select id="ptsl">' +
+              '<div class="form-field"><label for="pcoord"><span class="field-required-mark">*</span>坐标系</label><input id="pcoord" placeholder="—" autocomplete="off" readonly required /></div>' +
+              '<div class="form-field"><label for="pmount"><span class="field-required-mark">*</span>可用挂载点</label><input id="pmount" placeholder="—" autocomplete="off" readonly required /></div>' +
+              '<div class="form-field"><label for="ptsl"><span class="field-required-mark">*</span>是否启用tsl</label><select id="ptsl" required>' +
               '<option value="否" selected>否</option><option value="是">是</option></select></div>' +
-              '<div class="form-field"><label for="pcompress">是否启用压缩</label><select id="pcompress">' +
+              '<div class="form-field"><label for="pcompress"><span class="field-required-mark">*</span>是否启用压缩</label><select id="pcompress" required>' +
               '<option value="否" selected>否</option><option value="是">是</option></select></div>' +
               '<p class="drawer-field-hint pkg-derived-fields__foot-hint">以上四项由所选基础套餐带出，仅供确认。</p>' +
               '</div>' +
               '</div>' +
               '<div class="drawer-form-section">' +
               '<p class="drawer-form-section__title">业务参数</p>' +
-              '<div class="form-field"><label for="psources">源列表</label>' +
-              '<input id="psources" type="text" placeholder="按实际接入源填写，如 NTRIP:host:port" autocomplete="off" /></div>' +
-              '<div class="form-field"><label for="pmax">最大在线数</label><input id="pmax" type="number" min="1" max="999" step="1" placeholder="请输入[1-999]之间的整数" /></div>' +
-              '<p class="drawer-field-hint" style="margin:-0.65rem 0 0">填写须为 1–999 的整数。</p>' +
+              '<div class="form-field"><label for="psources"><span class="field-required-mark">*</span>源列表</label>' +
+              '<input id="psources" type="text" placeholder="按实际接入源填写，如 NTRIP:host:port" autocomplete="off" required /></div>' +
+              '<div class="form-field"><label for="pmax"><span class="field-required-mark">*</span>最大在线数</label><input id="pmax" type="number" min="1" max="100000" step="1" placeholder="请输入[1,100000]之间的整数" required /></div>' +
+              '<p class="drawer-field-hint" style="margin:-0.65rem 0 0">填写须为 1–100000 的整数。</p>' +
               '</div>' +
               '<div class="form-field"><label for="premark">备注</label>' +
               '<textarea id="premark" rows="3" placeholder="对内备注（可选）"></textarea></div>' +
@@ -8021,7 +8302,7 @@
               }
               var maxParsed = parseOptionalMaxOnlineInput(dr.querySelector('#pmax').value);
               if (!maxParsed.ok) {
-                toast('请输入[1,999]之间的整数', 'error');
+                toast('请输入[1,100000]之间的整数', 'error');
                 return;
               }
               var maxOnline = maxParsed.value;
@@ -8093,7 +8374,7 @@
               '</div>' +
               buildProductImageUploadFieldHtml('prod') +
               '<div class="form-field"><label for="prod-region">国家/地区</label><input id="prod-region" placeholder="如：全球 / 中国大陆" /></div>' +
-              '<div class="form-field"><label for="prod-price">价格 *</label><input id="prod-price" required placeholder="如：¥9,999 或面议" /></div>' +
+              '<div class="form-field"><label for="prod-price"><span class="field-required-mark">*</span>价格</label><input id="prod-price" required placeholder="如：¥9,999 或面议" /></div>' +
               '<div class="form-field"><label for="prod-billing">计费方式</label><select id="prod-billing">' +
               '<option value="连续计费" selected>连续计费</option>' +
               '</select></div>' +
@@ -8396,7 +8677,7 @@
               '</div>' +
               '<div class="drawer-edit-editable__form">' +
               '<div class="form-grid">' +
-              '<div class="form-field"><label for="pool-renew-qty">续费数量 *</label>' +
+              '<div class="form-field"><label for="pool-renew-qty"><span class="field-required-mark">*</span>续费数量</label>' +
               '<input id="pool-renew-qty" type="number" min="1" value="100" /></div>' +
               '<div class="form-field"><label for="pool-renew-remark">备注</label>' +
               '<input id="pool-renew-remark" placeholder="例如：客户追加采购" /></div>' +
@@ -8579,8 +8860,8 @@
           openDrawer(
             '新增角色',
             '<div class="drawer-form-stack">' +
-              '<div class="form-field"><label for="rn-new-name">角色名称 *</label><input id="rn-new-name" required placeholder="请输入" /></div>' +
-              '<div class="form-field"><label for="rn-new-code">角色标识 *</label><input id="rn-new-code" required placeholder="" /></div>' +
+              '<div class="form-field"><label for="rn-new-name"><span class="field-required-mark">*</span>角色名称</label><input id="rn-new-name" required placeholder="请输入" /></div>' +
+              '<div class="form-field"><label for="rn-new-code"><span class="field-required-mark">*</span>角色标识</label><input id="rn-new-code" required placeholder="" /></div>' +
               '<div class="form-field"><label for="rn-new-sort">显示顺序</label><input id="rn-new-sort" type="number" step="1" placeholder="数字越小越靠前" /></div>' +
               '<div class="form-field"><label for="rn-new-remark">备注</label><textarea id="rn-new-remark" class="drawer-textarea" rows="3" placeholder="可选"></textarea></div>' +
               '</div>',
@@ -8607,7 +8888,7 @@
             openDrawer(
               '编辑角色 · ' + role.name,
               '<div class="drawer-form-stack">' +
-                '<div class="form-field"><label for="rn-edit-name">角色名称 *</label><input id="rn-edit-name" value="' +
+                '<div class="form-field"><label for="rn-edit-name"><span class="field-required-mark">*</span>角色名称</label><input id="rn-edit-name" value="' +
                 escapeHtml(role.name) +
                 '" required /></div>' +
                 '<div class="form-field"><label for="rn-edit-code">角色标识</label><input id="rn-edit-code" value="' +
@@ -8697,13 +8978,13 @@
           openDrawer(
             '编辑管理员',
             '<div class="form-grid">' +
-              '<div class="form-field"><label>姓名 *</label><input id="ae-name" value="' +
+              '<div class="form-field"><label><span class="field-required-mark">*</span>姓名</label><input id="ae-name" value="' +
               escapeHtml(row.name) +
               '" required /></div>' +
-              '<div class="form-field"><label>手机号 *</label><input id="ae-phone" value="' +
+              '<div class="form-field"><label><span class="field-required-mark">*</span>手机号</label><input id="ae-phone" value="' +
               escapeHtml(row.phone) +
               '" required /></div>' +
-              '<div class="form-field"><label>邮箱 *</label><input id="ae-email" type="email" value="' +
+              '<div class="form-field"><label><span class="field-required-mark">*</span>邮箱</label><input id="ae-email" type="email" value="' +
               escapeHtml(row.email) +
               '" required /></div>' +
               '<div class="form-field"><label>备注</label><input id="ae-remark" value="' +
