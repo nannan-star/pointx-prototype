@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from 'react'
-import { Plus, Search, Settings2 } from 'lucide-react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
+import { Plus, Settings2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -24,6 +24,20 @@ import {
   type ServiceNode,
 } from '@/data/config-mock'
 import { cn } from '@/lib/utils'
+import { SearchFilterBar, type FilterFieldConfig, type FilterValue } from '@/components/SearchFilterBar'
+
+const nodeSearchFields: FilterFieldConfig[] = [
+  { key: 'name', label: '节点名称', type: 'text', placeholder: '请输入节点名称' },
+  { key: 'type', label: '节点类型', type: 'text', placeholder: '请输入节点类型' },
+  { key: 'code', label: '业务编号', type: 'text', placeholder: '请输入业务编号' },
+]
+
+const nodeFilterFields: FilterFieldConfig[] = [
+  {
+    key: 'type', label: '节点类型', type: 'select',
+    options: SERVICE_NODE_TYPE_OPTIONS.map((t) => ({ label: t, value: t })),
+  },
+]
 
 type DrawerMode = 'create' | 'edit' | 'detail' | null
 
@@ -32,7 +46,9 @@ export default function ServiceNodesPage() {
   const [drawerMode, setDrawerMode] = useState<DrawerMode>(null)
   const [currentNode, setCurrentNode] = useState<ServiceNode | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ServiceNode | null>(null)
-  const [query, setQuery] = useState('')
+  const [searchField, setSearchField] = useState('name')
+  const [searchValue, setSearchValue] = useState<FilterValue>('')
+  const [filters, setFilters] = useState<Record<string, FilterValue>>({ type: [] })
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
@@ -42,15 +58,36 @@ export default function ServiceNodesPage() {
   const [formEndpoint, setFormEndpoint] = useState('')
   const [formRemark, setFormRemark] = useState('')
 
+  const hasActiveFilters = useMemo(() =>
+    Object.values(filters).some((v) => Array.isArray(v) ? v.length > 0 : false)
+  , [filters])
+
+  const handleApply = useCallback((params: { searchField: string; searchValue: FilterValue; filters: Record<string, FilterValue> }) => {
+    setSearchField(params.searchField)
+    setSearchValue(params.searchValue)
+    setFilters(params.filters)
+    setPage(1)
+  }, [])
+
+  const handleReset = useCallback(() => {
+    setSearchField('name')
+    setSearchValue('')
+    setFilters({ type: [] })
+    setPage(1)
+  }, [])
+
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return nodes
-    return nodes.filter((n) =>
-      n.name.toLowerCase().includes(q) ||
-      n.type.toLowerCase().includes(q) ||
-      n.code.toLowerCase().includes(q)
-    )
-  }, [nodes, query])
+    const q = (typeof searchValue === 'string' ? searchValue : '').trim().toLowerCase()
+    return nodes.filter((n) => {
+      if (q) {
+        const val = n[searchField as keyof ServiceNode] ?? ''
+        if (!String(val).toLowerCase().includes(q)) return false
+      }
+      const typeFilter = filters.type as string[]
+      if (typeFilter.length > 0 && !typeFilter.includes(n.type)) return false
+      return true
+    })
+  }, [nodes, searchField, searchValue, filters])
 
   const total = filtered.length
   const pageCount = Math.max(1, Math.ceil(total / pageSize))
@@ -60,7 +97,7 @@ export default function ServiceNodesPage() {
     [filtered, safePage, pageSize]
   )
 
-  useEffect(() => { setPage(1) }, [query, pageSize])
+  useEffect(() => { setPage(1) }, [pageSize])
   useEffect(() => { if (page > pageCount) setPage(pageCount) }, [page, pageCount])
 
   const openCreate = () => {
@@ -119,15 +156,13 @@ export default function ServiceNodesPage() {
         </Button>
       </div>
 
-      <div className="relative w-full max-w-md">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#969696]" aria-hidden />
-        <Input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="搜索节点名称/类型/编号"
-          className="h-9 border-[#e9ebec] bg-white pl-9 text-sm text-[#323232] placeholder:text-[#969696] focus-visible:border-[#ff7f32] focus-visible:ring-[#ff7f32]/25"
-        />
-      </div>
+      <SearchFilterBar
+        searchFields={nodeSearchFields}
+        filterFields={nodeFilterFields}
+        hasActiveFilters={hasActiveFilters}
+        onApply={handleApply}
+        onReset={handleReset}
+      />
 
       <div className="overflow-hidden rounded-lg border border-[#e9ebec] bg-white shadow-[2px_2px_8px_-2px_rgba(0,0,0,0.05)]">
         <Table className="text-sm">

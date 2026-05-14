@@ -347,7 +347,6 @@ export default function SdkResourcesPage({ isClientView = false }: SdkResourcesP
               onClick={() => setOpenAccountOpen(true)}
               className="h-9 min-h-9 shrink-0 cursor-pointer gap-1.5 rounded-lg border border-[#ffa05c] bg-[#ff7f32] px-3 text-sm font-normal text-white hover:bg-[#ff6a14] focus-visible:ring-[3px] focus-visible:ring-[#ff7f32]/40 motion-reduce:transition-none"
             >
-              <Plus className="size-4" strokeWidth={2.25} aria-hidden />
               开通账号
             </Button>
           </TooltipProvider>

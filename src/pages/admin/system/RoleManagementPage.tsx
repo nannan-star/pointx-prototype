@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Plus, Search, Settings2 } from 'lucide-react'
+import { Plus, Settings2 } from 'lucide-react'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
@@ -8,10 +8,39 @@ import { Input } from '@/components/ui/input'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SearchFilterBar, type FilterValue } from '@/components/SearchFilterBar'
 import { roles, type Role } from '@/data/admin-system-mock'
 import { cn } from '@/lib/utils'
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50]
+
+/* ---- 搜索 / 筛选字段配置 ---- */
+const SEARCH_FIELDS = [
+  { key: 'name', label: '角色名称', type: 'text' as const, placeholder: '请输入角色名称' },
+  { key: 'code', label: '角色标识', type: 'text' as const, placeholder: '请输入角色标识' },
+]
+
+const FILTER_FIELDS = [
+  { key: 'name', label: '角色名称', type: 'text' as const, placeholder: '请输入角色名称' },
+  { key: 'code', label: '角色标识', type: 'text' as const, placeholder: '请输入角色标识' },
+]
+
+/* ---- Filter helpers ---- */
+function cellString(r: Role, key: string): string {
+  const v = (r as unknown as Record<string, unknown>)[key]
+  return typeof v === 'string' ? v : ''
+}
+
+function matchField(value: FilterValue, cellStr: string): boolean {
+  if (typeof value === 'string') {
+    return cellStr.toLowerCase().includes(value.trim().toLowerCase())
+  }
+  if (Array.isArray(value)) {
+    if (value.length === 0) return true
+    return value.some((v) => cellStr.toLowerCase().includes(v.toLowerCase()))
+  }
+  return true
+}
 
 export default function RoleManagementPage() {
   const [roleList, setRoleList] = useState<Role[]>([...roles].sort((a, b) => a.sortOrder - b.sortOrder))
@@ -19,17 +48,30 @@ export default function RoleManagementPage() {
   const [pageSize, setPageSize] = useState(20)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editRole, setEditRole] = useState<Role | null>(null)
-  const [query, setQuery] = useState('')
+  const [appliedSearchField, setAppliedSearchField] = useState('name')
+  const [appliedSearchValue, setAppliedSearchValue] = useState<FilterValue>('')
+  const [appliedFilters, setAppliedFilters] = useState<Record<string, FilterValue>>({})
   const [form, setForm] = useState({ name: '', code: '', sortOrder: '', remark: '' })
 
+  const hasActiveFilters = useMemo(() => {
+    return FILTER_FIELDS.some((f) => {
+      const v = appliedFilters[f.key]
+      if (Array.isArray(v)) return v.length > 0
+      return typeof v === 'string' && v.trim() !== ''
+    })
+  }, [appliedFilters])
+
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return roleList
-    return roleList.filter(r =>
-      r.name.toLowerCase().includes(q) ||
-      r.code.toLowerCase().includes(q)
-    )
-  }, [roleList, query])
+    return roleList.filter((r) => {
+      if (!matchField(appliedSearchValue, cellString(r, appliedSearchField))) return false
+      for (const f of FILTER_FIELDS) {
+        const v = appliedFilters[f.key]
+        if (v === undefined) continue
+        if (!matchField(v, cellString(r, f.key))) return false
+      }
+      return true
+    })
+  }, [roleList, appliedSearchField, appliedSearchValue, appliedFilters])
 
   const total = filtered.length
   const pageCount = Math.max(1, Math.ceil(total / pageSize))
@@ -37,7 +79,7 @@ export default function RoleManagementPage() {
   const start = (safePage - 1) * pageSize
   const slice = filtered.slice(start, start + pageSize)
 
-  useEffect(() => { setPage(1) }, [query, pageSize])
+  useEffect(() => { setPage(1) }, [appliedSearchValue, appliedSearchField, appliedFilters, pageSize])
   useEffect(() => { if (page > pageCount) setPage(pageCount) }, [page, pageCount])
 
   function handleNew() {
@@ -70,26 +112,34 @@ export default function RoleManagementPage() {
 
   return (
     <div className="space-y-4 -m-6 min-h-full bg-[#f9f9f9] p-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
         <h1 className="text-xl font-semibold text-[#323232]">角色权限</h1>
-        <Button
-          onClick={handleNew}
-          className="h-8 shrink-0 gap-1 rounded-lg border border-[#ffa05c] bg-[#ff7f32] px-3 text-sm font-normal text-[#f9f9f9] hover:bg-[#ff6a14]"
-        >
-          <Plus className="size-4" strokeWidth={2.5} />
-          新增
-        </Button>
       </div>
 
-      <div className="relative w-full max-w-md">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#969696]" aria-hidden />
-        <Input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="搜索角色名称/标识"
-          className="h-9 border-[#e9ebec] bg-white pl-9 text-sm text-[#323232] placeholder:text-[#969696] focus-visible:border-[#ff7f32] focus-visible:ring-[#ff7f32]/25"
-        />
-      </div>
+      <SearchFilterBar
+        searchFields={SEARCH_FIELDS}
+        filterFields={FILTER_FIELDS}
+        hasActiveFilters={hasActiveFilters}
+        onApply={({ searchField, searchValue, filters }) => {
+          setAppliedSearchField(searchField)
+          setAppliedSearchValue(searchValue)
+          setAppliedFilters(filters)
+        }}
+        onReset={() => {
+          setAppliedSearchField('name')
+          setAppliedSearchValue('')
+          setAppliedFilters({})
+        }}
+        actions={
+          <Button
+            onClick={handleNew}
+            className="h-9 gap-1 rounded-lg border border-[#ffa05c] bg-[#ff7f32] px-4 text-sm font-normal text-white hover:bg-[#ff6a14]"
+          >
+            <Plus className="size-4" strokeWidth={2.5} />
+            新增
+          </Button>
+        }
+      />
 
       <div className="overflow-hidden rounded-lg border border-[#e9ebec] bg-white shadow-[2px_2px_8px_-2px_rgba(0,0,0,0.05)]">
         <Table className="text-sm">

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Plus, Search, Settings2 } from 'lucide-react'
+import { Plus, Settings2 } from 'lucide-react'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
@@ -8,8 +8,38 @@ import { Input } from '@/components/ui/input'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SearchFilterBar, type FilterValue } from '@/components/SearchFilterBar'
 import { dictionaries, type Dictionary } from '@/data/admin-system-mock'
 import { cn } from '@/lib/utils'
+
+/* ---- 搜索 / 筛选字段配置 ---- */
+const SEARCH_FIELDS = [
+  { key: 'enumType', label: '枚举类型', type: 'text' as const, placeholder: '请输入枚举类型' },
+  { key: 'value', label: '值', type: 'text' as const, placeholder: '请输入值' },
+]
+
+const FILTER_FIELDS = [
+  { key: 'enumType', label: '枚举类型', type: 'text' as const, placeholder: '请输入枚举类型' },
+  { key: 'value', label: '值', type: 'text' as const, placeholder: '请输入值' },
+  { key: 'description', label: '描述', type: 'text' as const, placeholder: '请输入描述' },
+]
+
+/* ---- Filter helpers ---- */
+function cellString(r: Dictionary, key: string): string {
+  const v = (r as unknown as Record<string, unknown>)[key]
+  return typeof v === 'string' ? v : ''
+}
+
+function matchField(value: FilterValue, cellStr: string): boolean {
+  if (typeof value === 'string') {
+    return cellStr.toLowerCase().includes(value.trim().toLowerCase())
+  }
+  if (Array.isArray(value)) {
+    if (value.length === 0) return true
+    return value.some((v) => cellStr.toLowerCase().includes(v.toLowerCase()))
+  }
+  return true
+}
 
 export default function DictManagementPage() {
   const [items, setItems] = useState<Dictionary[]>(() =>
@@ -21,19 +51,32 @@ export default function DictManagementPage() {
   )
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editItem, setEditItem] = useState<Dictionary | null>(null)
-  const [query, setQuery] = useState('')
+  const [appliedSearchField, setAppliedSearchField] = useState('enumType')
+  const [appliedSearchValue, setAppliedSearchValue] = useState<FilterValue>('')
+  const [appliedFilters, setAppliedFilters] = useState<Record<string, FilterValue>>({})
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [form, setForm] = useState({ enumType: '', pk: '', value: '', sort: '', description: '' })
 
+  const hasActiveFilters = useMemo(() => {
+    return FILTER_FIELDS.some((f) => {
+      const v = appliedFilters[f.key]
+      if (Array.isArray(v)) return v.length > 0
+      return typeof v === 'string' && v.trim() !== ''
+    })
+  }, [appliedFilters])
+
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return items
-    return items.filter(d =>
-      d.enumType.toLowerCase().includes(q) ||
-      d.value.toLowerCase().includes(q)
-    )
-  }, [items, query])
+    return items.filter((d) => {
+      if (!matchField(appliedSearchValue, cellString(d, appliedSearchField))) return false
+      for (const f of FILTER_FIELDS) {
+        const v = appliedFilters[f.key]
+        if (v === undefined) continue
+        if (!matchField(v, cellString(d, f.key))) return false
+      }
+      return true
+    })
+  }, [items, appliedSearchField, appliedSearchValue, appliedFilters])
 
   const total = filtered.length
   const pageCount = Math.max(1, Math.ceil(total / pageSize))
@@ -43,7 +86,7 @@ export default function DictManagementPage() {
     [filtered, safePage, pageSize]
   )
 
-  useEffect(() => { setPage(1) }, [query, pageSize])
+  useEffect(() => { setPage(1) }, [appliedSearchValue, appliedSearchField, appliedFilters, pageSize])
   useEffect(() => { if (page > pageCount) setPage(pageCount) }, [page, pageCount])
 
   function handleNew() {
@@ -76,26 +119,34 @@ export default function DictManagementPage() {
 
   return (
     <div className="space-y-4 -m-6 min-h-full bg-[#f9f9f9] p-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
         <h1 className="text-xl font-semibold text-[#323232]">字典管理</h1>
-        <Button
-          onClick={handleNew}
-          className="h-8 shrink-0 gap-1 rounded-lg border border-[#ffa05c] bg-[#ff7f32] px-3 text-sm font-normal text-[#f9f9f9] hover:bg-[#ff6a14]"
-        >
-          <Plus className="size-4" strokeWidth={2.5} />
-          新增
-        </Button>
       </div>
 
-      <div className="relative w-full max-w-md">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#969696]" aria-hidden />
-        <Input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="搜索枚举类型/值"
-          className="h-9 border-[#e9ebec] bg-white pl-9 text-sm text-[#323232] placeholder:text-[#969696] focus-visible:border-[#ff7f32] focus-visible:ring-[#ff7f32]/25"
-        />
-      </div>
+      <SearchFilterBar
+        searchFields={SEARCH_FIELDS}
+        filterFields={FILTER_FIELDS}
+        hasActiveFilters={hasActiveFilters}
+        onApply={({ searchField, searchValue, filters }) => {
+          setAppliedSearchField(searchField)
+          setAppliedSearchValue(searchValue)
+          setAppliedFilters(filters)
+        }}
+        onReset={() => {
+          setAppliedSearchField('enumType')
+          setAppliedSearchValue('')
+          setAppliedFilters({})
+        }}
+        actions={
+          <Button
+            onClick={handleNew}
+            className="h-9 gap-1 rounded-lg border border-[#ffa05c] bg-[#ff7f32] px-4 text-sm font-normal text-white hover:bg-[#ff6a14]"
+          >
+            <Plus className="size-4" strokeWidth={2.5} />
+            新增
+          </Button>
+        }
+      />
 
       <div className="overflow-hidden rounded-lg border border-[#e9ebec] bg-white shadow-[2px_2px_8px_-2px_rgba(0,0,0,0.05)]">
         <Table className="text-sm">

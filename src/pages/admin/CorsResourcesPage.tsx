@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Search, Settings2 } from 'lucide-react'
-import { Input } from '@/components/ui/input'
+import { Settings2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -14,31 +13,113 @@ import {
 import { StatusBadge } from '@/components/StatusBadge'
 import { CorsDetailDrawer } from '@/components/CorsDetailDrawer'
 import { CorsOpenAccountDrawer } from '@/components/CorsOpenAccountDrawer'
+import { SearchFilterBar, type FilterValue, type DateRange } from '@/components/SearchFilterBar'
 import { corsResources, type CorsResource } from '@/data/resource-mock'
 import { cn } from '@/lib/utils'
+
+/* ---- 搜索 / 筛选字段配置 ---- */
+const SEARCH_FIELDS = [
+  { key: 'company', label: '企业名称', type: 'text' as const, placeholder: '请输入企业名称关键词' },
+  { key: 'account', label: '账号名', type: 'text' as const, placeholder: '请输入账号名' },
+  { key: 'product', label: '商品名称', type: 'text' as const, placeholder: '请输入商品名称' },
+  { key: 'spec', label: '规格', type: 'text' as const, placeholder: '请输入规格关键词' },
+]
+
+const FILTER_FIELDS_ADMIN = [
+  { key: 'company', label: '企业名称', type: 'text' as const, placeholder: '请输入企业名称' },
+  { key: 'account', label: '账号名', type: 'text' as const, placeholder: '请输入账号名' },
+  { key: 'status', label: '状态', type: 'select' as const, options: [
+    { label: '启用', value: '启用' },
+    { label: '禁用', value: '禁用' },
+  ] },
+  { key: 'activateStatus', label: '激活状态', type: 'select' as const, options: [
+    { label: '已激活', value: '已激活' },
+    { label: '待激活', value: '待激活' },
+  ] },
+  { key: 'region', label: '区域', type: 'text' as const, placeholder: '请输入区域' },
+  { key: 'product', label: '商品名称', type: 'text' as const, placeholder: '请输入商品名称' },
+  { key: 'spec', label: '规格', type: 'text' as const, placeholder: '请输入规格关键词' },
+  { key: 'startAt', label: '激活时间', type: 'date' as const },
+  { key: 'expireAt', label: '到期时间', type: 'date' as const },
+]
+
+const FILTER_FIELDS_CLIENT = FILTER_FIELDS_ADMIN.filter(
+  (f) => f.key !== 'company'
+)
+
+/* ---- Filter helpers ---- */
+
+function cellString(r: CorsResource, key: string): string {
+  const v = (r as unknown as Record<string, unknown>)[key]
+  return typeof v === 'string' ? v : ''
+}
+
+function matchField(value: FilterValue, cellStr: string): boolean {
+  if (typeof value === 'string') {
+    return cellStr.toLowerCase().includes(value.trim().toLowerCase())
+  }
+  if (Array.isArray(value)) {
+    if (value.length === 0) return true
+    return value.some((v) => cellStr.toLowerCase().includes(v.toLowerCase()))
+  }
+  if (typeof value === 'object' && value !== null && ('from' in value || 'to' in value)) {
+    const range = value as DateRange
+    if (!range.from && !range.to) return true
+    const cell = cellStr.trim()
+    if (!cell) return false
+    const cellDate = new Date(cell.replace(/\//g, '-'))
+    if (isNaN(cellDate.getTime())) return false
+    if (range.from && cellDate < range.from) return false
+    if (range.to) {
+      const toEnd = new Date(range.to)
+      toEnd.setHours(23, 59, 59, 999)
+      if (cellDate > toEnd) return false
+    }
+    return true
+  }
+  return true
+}
 
 interface CorsResourcesPageProps {
   isClientView?: boolean
 }
 
 export default function CorsResourcesPage({ isClientView = false }: CorsResourcesPageProps) {
-  const [query, setQuery] = useState('')
-  const [filterRegion, setFilterRegion] = useState('')
-  const [filterSpec, setFilterSpec] = useState('')
+  const filterFields = isClientView ? FILTER_FIELDS_CLIENT : FILTER_FIELDS_ADMIN
+
+  /* applied filter state */
+  const [appliedSearchField, setAppliedSearchField] = useState('company')
+  const [appliedSearchValue, setAppliedSearchValue] = useState<FilterValue>('')
+  const [appliedFilters, setAppliedFilters] = useState<Record<string, FilterValue>>({})
+
   const [detailAccount, setDetailAccount] = useState<string | null>(null)
   const [openAccountOpen, setOpenAccountOpen] = useState(false)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
+  const hasActiveFilters = useMemo(() => {
+    return filterFields.some((f) => {
+      const v = appliedFilters[f.key]
+      if (Array.isArray(v)) return v.length > 0
+      if (typeof v === 'object' && v !== null && ('from' in v || 'to' in v)) {
+        const r = v as DateRange
+        return !!(r.from || r.to)
+      }
+      return typeof v === 'string' && v.trim() !== ''
+    })
+  }, [appliedFilters, filterFields])
+
   const filtered = useMemo(() => {
     return corsResources.filter((r) => {
-      const kw = query.trim().toLowerCase()
-      const matchKw = !kw || r.company.toLowerCase().includes(kw) || r.account.toLowerCase().includes(kw) || r.product.toLowerCase().includes(kw)
-      const matchRegion = !filterRegion || r.region === filterRegion
-      const matchSpec = !filterSpec || r.spec.includes(filterSpec) || r.product.includes(filterSpec)
-      return matchKw && matchRegion && matchSpec
+      if (!matchField(appliedSearchValue, cellString(r, appliedSearchField))) return false
+      for (const f of filterFields) {
+        const v = appliedFilters[f.key]
+        if (v === undefined) continue
+        if (!matchField(v, cellString(r, f.key))) return false
+      }
+      return true
     })
-  }, [query, filterRegion, filterSpec])
+  }, [appliedSearchField, appliedSearchValue, appliedFilters, filterFields])
 
   const total = filtered.length
   const pageCount = Math.max(1, Math.ceil(total / pageSize))
@@ -48,7 +129,7 @@ export default function CorsResourcesPage({ isClientView = false }: CorsResource
     [filtered, safePage, pageSize]
   )
 
-  useEffect(() => { setPage(1) }, [query, filterRegion, filterSpec, pageSize])
+  useEffect(() => { setPage(1) }, [appliedSearchValue, appliedSearchField, appliedFilters, pageSize])
   useEffect(() => { if (page > pageCount) setPage(pageCount) }, [page, pageCount])
 
   const pageSub = isClientView
@@ -65,37 +146,29 @@ export default function CorsResourcesPage({ isClientView = false }: CorsResource
         <p className="text-sm text-[#969696] mt-1">{pageSub}</p>
       </div>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative w-full max-w-md">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#969696]" aria-hidden />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="企业/账号/商品关键词"
-              className="h-9 border-[#e9ebec] bg-white pl-9 text-sm text-[#323232] placeholder:text-[#969696] focus-visible:border-[#ff7f32] focus-visible:ring-[#ff7f32]/25"
-            />
-          </div>
-          <Input
-            placeholder="区域"
-            value={filterRegion}
-            onChange={(e) => setFilterRegion(e.target.value)}
-            className="h-9 w-36 border-[#e9ebec] bg-white text-sm text-[#323232] placeholder:text-[#969696] focus-visible:border-[#ff7f32] focus-visible:ring-[#ff7f32]/25"
-          />
-          <Input
-            placeholder="规格关键词"
-            value={filterSpec}
-            onChange={(e) => setFilterSpec(e.target.value)}
-            className="h-9 w-48 border-[#e9ebec] bg-white text-sm text-[#323232] placeholder:text-[#969696] focus-visible:border-[#ff7f32] focus-visible:ring-[#ff7f32]/25"
-          />
-        </div>
-        <Button
-          onClick={() => setOpenAccountOpen(true)}
-          className="h-8 shrink-0 gap-1 rounded-lg border border-[#ffa05c] bg-[#ff7f32] px-3 text-sm font-normal text-[#f9f9f9] hover:bg-[#ff6a14]"
-        >
-          开通账号
-        </Button>
-      </div>
+      <SearchFilterBar
+        searchFields={SEARCH_FIELDS}
+        filterFields={filterFields}
+        hasActiveFilters={hasActiveFilters}
+        onApply={({ searchField, searchValue, filters }) => {
+          setAppliedSearchField(searchField)
+          setAppliedSearchValue(searchValue)
+          setAppliedFilters(filters)
+        }}
+        onReset={() => {
+          setAppliedSearchField('company')
+          setAppliedSearchValue('')
+          setAppliedFilters({})
+        }}
+        actions={
+          <Button
+            onClick={() => setOpenAccountOpen(true)}
+            className="h-9 rounded-lg border border-[#ffa05c] bg-[#ff7f32] px-4 text-sm font-normal text-white hover:bg-[#ff6a14]"
+          >
+            开通账号
+          </Button>
+        }
+      />
 
       <div className="overflow-hidden rounded-lg border border-[#e9ebec] bg-white shadow-[2px_2px_8px_-2px_rgba(0,0,0,0.05)]">
         <Table className="text-sm">

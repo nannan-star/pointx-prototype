@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from 'react'
-import { Plus, Search, Settings2 } from 'lucide-react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
+import { Plus, Settings2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -18,7 +18,32 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import { products as initialProducts, type Product } from '@/data/config-mock'
+import { SearchFilterBar, type FilterFieldConfig, type FilterValue } from '@/components/SearchFilterBar'
 import { cn } from '@/lib/utils'
+
+const productSearchFields: FilterFieldConfig[] = [
+  { key: 'name', label: '商品名称', type: 'text', placeholder: '请输入商品名称' },
+  { key: 'type', label: '商品类型', type: 'text', placeholder: '请输入商品类型' },
+  { key: 'id', label: '商品编码', type: 'text', placeholder: '请输入商品编码' },
+]
+
+const productFilterFields: FilterFieldConfig[] = [
+  {
+    key: 'type', label: '商品类型', type: 'select',
+    options: [
+      { label: 'SDK', value: 'SDK' },
+      { label: '外置账号', value: '外置账号' },
+      { label: '一键固定', value: '一键固定' },
+    ],
+  },
+  {
+    key: 'billingMode', label: '计费方式', type: 'select',
+    options: [
+      { label: '连续计费', value: '连续计费' },
+      { label: '一次性', value: '一次性' },
+    ],
+  },
+]
 
 type DrawerMode = 'create' | 'edit' | 'detail' | null
 
@@ -26,7 +51,9 @@ export default function ProductsPage() {
   const [productList, setProductList] = useState<Product[]>(initialProducts)
   const [drawerMode, setDrawerMode] = useState<DrawerMode>(null)
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null)
-  const [query, setQuery] = useState('')
+  const [searchField, setSearchField] = useState('name')
+  const [searchValue, setSearchValue] = useState<FilterValue>('')
+  const [filters, setFilters] = useState<Record<string, FilterValue>>({ type: [], billingMode: [] })
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
@@ -40,15 +67,38 @@ export default function ProductsPage() {
   const [formDesc, setFormDesc] = useState('')
   const [formRemark, setFormRemark] = useState('')
 
+  const hasActiveFilters = useMemo(() =>
+    Object.values(filters).some((v) => Array.isArray(v) ? v.length > 0 : false)
+  , [filters])
+
+  const handleApply = useCallback((params: { searchField: string; searchValue: FilterValue; filters: Record<string, FilterValue> }) => {
+    setSearchField(params.searchField)
+    setSearchValue(params.searchValue)
+    setFilters(params.filters)
+    setPage(1)
+  }, [])
+
+  const handleReset = useCallback(() => {
+    setSearchField('name')
+    setSearchValue('')
+    setFilters({ type: [], billingMode: [] })
+    setPage(1)
+  }, [])
+
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return productList
-    return productList.filter((p) =>
-      p.name.toLowerCase().includes(q) ||
-      p.type.toLowerCase().includes(q) ||
-      p.id.toLowerCase().includes(q)
-    )
-  }, [productList, query])
+    const q = (typeof searchValue === 'string' ? searchValue : '').trim().toLowerCase()
+    return productList.filter((p) => {
+      if (q) {
+        const val = p[searchField as keyof Product] ?? ''
+        if (!String(val).toLowerCase().includes(q)) return false
+      }
+      const typeFilter = filters.type as string[]
+      if (typeFilter.length > 0 && !typeFilter.includes(p.type)) return false
+      const billingFilter = filters.billingMode as string[]
+      if (billingFilter.length > 0 && !billingFilter.includes(p.billingMode)) return false
+      return true
+    })
+  }, [productList, searchField, searchValue, filters])
 
   const total = filtered.length
   const pageCount = Math.max(1, Math.ceil(total / pageSize))
@@ -58,7 +108,7 @@ export default function ProductsPage() {
     [filtered, safePage, pageSize]
   )
 
-  useEffect(() => { setPage(1) }, [query, pageSize])
+  useEffect(() => { setPage(1) }, [pageSize])
   useEffect(() => { if (page > pageCount) setPage(pageCount) }, [page, pageCount])
 
   const openCreate = () => {
@@ -120,15 +170,13 @@ export default function ProductsPage() {
         </Button>
       </div>
 
-      <div className="relative w-full max-w-md">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#969696]" aria-hidden />
-        <Input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="搜索商品名称/类型/编码"
-          className="h-9 border-[#e9ebec] bg-white pl-9 text-sm text-[#323232] placeholder:text-[#969696] focus-visible:border-[#ff7f32] focus-visible:ring-[#ff7f32]/25"
-        />
-      </div>
+      <SearchFilterBar
+        searchFields={productSearchFields}
+        filterFields={productFilterFields}
+        hasActiveFilters={hasActiveFilters}
+        onApply={handleApply}
+        onReset={handleReset}
+      />
 
       <div className="overflow-hidden rounded-lg border border-[#e9ebec] bg-white shadow-[2px_2px_8px_-2px_rgba(0,0,0,0.05)]">
         <Table className="text-sm">

@@ -38,7 +38,7 @@ export default function ResourceInfoPage() {
     : 0
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="flex h-full flex-col gap-5">
       {/* ── Page Header ── */}
       <div>
         <h1 className="text-xl font-bold text-[#1a1a1a]">资源信息</h1>
@@ -49,13 +49,13 @@ export default function ResourceInfoPage() {
 
       {/* ── Company Identity Banner ── */}
       <div className="relative overflow-hidden rounded-xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-        <div className="h-1 bg-gradient-to-r from-[#ff7f32] via-[#ff9a5c] to-[#ff7f32]" />
-        <div className="flex items-center gap-5 px-7 py-5">
-          <div className="flex size-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#ff7f32] to-[#e06820] shadow-md shadow-[#ff7f32]/20">
+        <div className="h-1 bg-gradient-to-r from-[#ff7f32] via-[#ff8f4a] to-[#ff9a5c]" />
+        <div className="flex items-center gap-5 p-5">
+          <div className="flex size-10 items-center justify-center rounded-lg bg-gradient-to-br from-[#ff7f32] via-[#ff8f4a] to-[#ff9a5c]">
             <Building2 className="size-5 text-white" />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-bold text-[#1a1a1a]">{profile.companyName}</h2>
+            <h2 className="text-lg font-semibold text-[#1a1a1a]">{profile.companyName}</h2>
             <p className="mt-0.5 text-sm text-[#646464]">
               公司 ID：<span className="font-mono font-medium text-[#323232]">{profile.companyId}</span>
             </p>
@@ -68,11 +68,11 @@ export default function ResourceInfoPage() {
         <button
           type="button"
           onClick={() => setPoolExpanded(!poolExpanded)}
-          className="flex w-full items-center justify-between px-6 py-4 text-left"
+          className="flex w-full cursor-pointer items-center justify-between p-5 text-left transition-colors hover:bg-[#ff7f32]/5"
         >
           <div className="flex items-center gap-2.5">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-[#ff7f32]/10">
-              <Database className="size-4 text-[#ff7f32]" />
+            <div className="flex size-7 items-center justify-center rounded-lg bg-[#ff7f32]/10">
+              <Database className="size-3.5 text-[#ff7f32]" />
             </div>
             <span className="text-sm font-semibold text-[#1a1a1a]">资源池信息</span>
           </div>
@@ -84,7 +84,7 @@ export default function ResourceInfoPage() {
         </button>
 
         {poolExpanded && (
-          <div className="border-t border-[#e9ebec] px-6 py-5">
+          <div className="border-t border-[#e9ebec] p-5">
             <div className="grid grid-cols-2 gap-x-8 gap-y-5">
               {/* Secret / credential fields */}
               <div className="space-y-4">
@@ -97,7 +97,7 @@ export default function ResourceInfoPage() {
                     return (
                       <div key={f.label}>
                         <div className="flex items-center gap-1.5 text-xs text-[#969696]">
-                          <FieldIcon className="size-3" />
+                          <FieldIcon className="size-3.5 shrink-0" />
                           {f.label}
                         </div>
                         <p className="mt-0.5 font-mono text-sm font-medium text-[#323232]">
@@ -120,7 +120,7 @@ export default function ResourceInfoPage() {
                     return (
                       <div key={f.label}>
                         <div className="flex items-center gap-1.5 text-xs text-[#969696]">
-                          <FieldIcon className="size-3" />
+                          <FieldIcon className="size-3.5 shrink-0" />
                           {f.label}
                         </div>
                         <p className="mt-0.5 text-sm font-medium text-[#323232]">
@@ -143,14 +143,14 @@ export default function ResourceInfoPage() {
       {globalNode && (
         <div className="relative overflow-hidden rounded-xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
           <div className="absolute inset-y-0 left-0 w-1 bg-[#ff7f32]" />
-          <div className="flex items-center gap-6 px-7 py-5">
-            <div className="flex size-12 items-center justify-center rounded-xl bg-[#ff7f32]/10">
+          <div className="flex items-center gap-6 p-5">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-[#ff7f32]/10">
               <Globe className="size-5 text-[#ff7f32]" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-semibold text-[#1a1a1a]">{globalNode.serviceNode}</h3>
-                <span className="inline-flex rounded-full bg-[#ff7f32]/10 px-2 py-0.5 text-[10px] font-semibold text-[#ff7f32]">
+                <span className="inline-flex rounded-full bg-[#ff7f32]/10 px-2 py-0.5 text-[11px] font-semibold text-[#ff7f32]">
                   汇总
                 </span>
               </div>
@@ -158,25 +158,25 @@ export default function ResourceInfoPage() {
             </div>
             <div className="flex items-baseline gap-6">
               <div className="text-center">
-                <p className="text-2xl font-bold text-[#1a1a1a]">{globalNode.used.toLocaleString()}</p>
+                <p className="text-xl font-bold text-[#1a1a1a]">{globalNode.used.toLocaleString()}</p>
                 <p className="mt-0.5 text-[11px] text-[#969696]">已用</p>
               </div>
-              <div className="text-[#d0d3d5]">/</div>
+              <div className="text-[#969696]">/</div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-[#323232]">{globalNode.total.toLocaleString()}</p>
+                <p className="text-xl font-bold text-[#323232]">{globalNode.total.toLocaleString()}</p>
                 <p className="mt-0.5 text-[11px] text-[#969696]">总量</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-[#22c55e]">{globalNode.unused.toLocaleString()}</p>
+                <p className="text-xl font-bold text-[#22c55e]">{globalNode.unused.toLocaleString()}</p>
                 <p className="mt-0.5 text-[11px] text-[#969696]">剩余</p>
               </div>
               <div className="ml-2 flex flex-col items-end">
-                <span className="text-lg font-bold text-[#ff7f32]">{globalPct}%</span>
-                <span className="text-[10px] text-[#969696]">使用率</span>
+                <span className="text-xl font-bold text-[#ff7f32]">{globalPct}%</span>
+                <span className="text-[11px] text-[#969696]">使用率</span>
               </div>
             </div>
           </div>
-          <div className="h-1 bg-[#f0f0f0]">
+          <div className="h-1 bg-[#f9f9f9]">
             <div
               className="h-full bg-gradient-to-r from-[#ff7f32] to-[#ff9a5c] transition-all duration-500"
               style={{ width: `${globalPct}%` }}
@@ -188,13 +188,13 @@ export default function ResourceInfoPage() {
       {/* ── Region Node Cards ── */}
       {regionNodes.length > 0 && (
         <div>
-          <div className="mb-4 flex items-center gap-2.5">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-[#ff7f32]/10">
-              <Server className="size-4 text-[#ff7f32]" />
+          <div className="mb-5 flex items-center gap-2.5">
+            <div className="flex size-7 items-center justify-center rounded-lg bg-[#ff7f32]/10">
+              <Server className="size-3.5 text-[#ff7f32]" />
             </div>
             <h2 className="text-sm font-semibold text-[#1a1a1a]">按节点 · 资源用量</h2>
           </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
             {regionNodes.map((row) => (
               <ResourceNodeCard key={row.serviceNode} {...row} />
             ))}

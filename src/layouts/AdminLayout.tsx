@@ -224,15 +224,6 @@ export default function AdminLayout() {
               )
             })}
           </nav>
-          <div className="border-t border-[#e9ebec] p-2">
-            <button
-              type="button"
-              onClick={() => navigate('/admin/instances')}
-              className="w-full cursor-pointer rounded-md px-3 py-2 text-left text-sm text-[#969696] transition-colors hover:bg-white/60 hover:text-[#323232]"
-            >
-              退出登录
-            </button>
-          </div>
         </aside>
 
         <main className="min-h-0 flex-1 overflow-y-auto bg-[#f9f9f9] p-6">

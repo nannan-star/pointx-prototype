@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from 'react'
-import { Plus, Search, Settings2 } from 'lucide-react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
+import { Plus, Settings2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -13,7 +13,26 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import { specs as initialSpecs, products, type Spec } from '@/data/config-mock'
+import { SearchFilterBar, type FilterFieldConfig, type FilterValue } from '@/components/SearchFilterBar'
 import { cn } from '@/lib/utils'
+
+const specSearchFields: FilterFieldConfig[] = [
+  { key: 'template', label: '规格名称', type: 'text', placeholder: '请输入规格名称' },
+  { key: 'pn', label: 'PN号', type: 'text', placeholder: '请输入PN号' },
+  { key: 'product', label: '商品', type: 'text', placeholder: '请输入商品名称' },
+  { key: 'name', label: '商品规格', type: 'text', placeholder: '请输入商品规格' },
+]
+
+const specFilterFields: FilterFieldConfig[] = [
+  {
+    key: 'currency', label: '币种', type: 'select',
+    options: [
+      { label: 'CNY', value: 'CNY' },
+      { label: 'USD', value: 'USD' },
+      { label: 'EUR', value: 'EUR' },
+    ],
+  },
+]
 
 type DrawerMode = 'create' | 'edit' | 'detail' | null
 
@@ -21,7 +40,9 @@ export default function SpecsPage() {
   const [specList, setSpecList] = useState<Spec[]>(initialSpecs)
   const [drawerMode, setDrawerMode] = useState<DrawerMode>(null)
   const [currentSpec, setCurrentSpec] = useState<Spec | null>(null)
-  const [query, setQuery] = useState('')
+  const [searchField, setSearchField] = useState('template')
+  const [searchValue, setSearchValue] = useState<FilterValue>('')
+  const [filters, setFilters] = useState<Record<string, FilterValue>>({ currency: [] })
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
@@ -34,16 +55,36 @@ export default function SpecsPage() {
   const [formTerminalPrice, setFormTerminalPrice] = useState('')
   const [formStock, setFormStock] = useState('')
 
+  const hasActiveFilters = useMemo(() =>
+    Object.values(filters).some((v) => Array.isArray(v) ? v.length > 0 : false)
+  , [filters])
+
+  const handleApply = useCallback((params: { searchField: string; searchValue: FilterValue; filters: Record<string, FilterValue> }) => {
+    setSearchField(params.searchField)
+    setSearchValue(params.searchValue)
+    setFilters(params.filters)
+    setPage(1)
+  }, [])
+
+  const handleReset = useCallback(() => {
+    setSearchField('template')
+    setSearchValue('')
+    setFilters({ currency: [] })
+    setPage(1)
+  }, [])
+
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return specList
-    return specList.filter((s) =>
-      (s.template || '').toLowerCase().includes(q) ||
-      s.pn.toLowerCase().includes(q) ||
-      s.product.toLowerCase().includes(q) ||
-      s.name.toLowerCase().includes(q)
-    )
-  }, [specList, query])
+    const q = (typeof searchValue === 'string' ? searchValue : '').trim().toLowerCase()
+    return specList.filter((s) => {
+      if (q) {
+        const val = s[searchField as keyof Spec] ?? ''
+        if (!String(val).toLowerCase().includes(q)) return false
+      }
+      const currencyFilter = filters.currency as string[]
+      if (currencyFilter.length > 0 && !currencyFilter.includes(s.currency)) return false
+      return true
+    })
+  }, [specList, searchField, searchValue, filters])
 
   const total = filtered.length
   const pageCount = Math.max(1, Math.ceil(total / pageSize))
@@ -53,7 +94,7 @@ export default function SpecsPage() {
     [filtered, safePage, pageSize]
   )
 
-  useEffect(() => { setPage(1) }, [query, pageSize])
+  useEffect(() => { setPage(1) }, [pageSize])
   useEffect(() => { if (page > pageCount) setPage(pageCount) }, [page, pageCount])
 
   const openCreate = () => {
@@ -113,15 +154,13 @@ export default function SpecsPage() {
         </Button>
       </div>
 
-      <div className="relative w-full max-w-md">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#969696]" aria-hidden />
-        <Input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="搜索规格名称/PN号/商品"
-          className="h-9 border-[#e9ebec] bg-white pl-9 text-sm text-[#323232] placeholder:text-[#969696] focus-visible:border-[#ff7f32] focus-visible:ring-[#ff7f32]/25"
-        />
-      </div>
+      <SearchFilterBar
+        searchFields={specSearchFields}
+        filterFields={specFilterFields}
+        hasActiveFilters={hasActiveFilters}
+        onApply={handleApply}
+        onReset={handleReset}
+      />
 
       <div className="overflow-hidden rounded-lg border border-[#e9ebec] bg-white shadow-[2px_2px_8px_-2px_rgba(0,0,0,0.05)]">
         <Table className="text-sm">

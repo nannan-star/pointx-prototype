@@ -4,12 +4,29 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
+import { SearchFilterBar, type FilterValue } from '@/components/SearchFilterBar'
 import { menuTree, type MenuNode } from '@/data/admin-system-mock'
 import { cn } from '@/lib/utils'
+
+/* ---- 搜索 / 筛选字段配置 ---- */
+const SEARCH_FIELDS = [
+  { key: 'name', label: '菜单名称', type: 'text' as const, placeholder: '请输入菜单名称' },
+]
+
+const FILTER_FIELDS = [
+  { key: 'name', label: '菜单名称', type: 'text' as const, placeholder: '请输入菜单名称' },
+  { key: 'status', label: '状态', type: 'select' as const, options: [
+    { label: '启用', value: '启用' },
+    { label: '禁用', value: '禁用' },
+  ] },
+  { key: 'menuType', label: '菜单类型', type: 'select' as const, options: [
+    { label: '目录', value: '目录' },
+    { label: '菜单', value: '菜单' },
+  ] },
+]
 
 interface FlatRow {
   node: MenuNode
@@ -29,8 +46,11 @@ function collectVisibleRows(nodes: MenuNode[], expanded: Record<string, boolean>
 
 export default function MenuManagementPage() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
-  const [filterName, setFilterName] = useState('')
-  const [filterStatus, setFilterStatus] = useState('__all__')
+
+  /* applied filter state */
+  const [appliedSearchField, setAppliedSearchField] = useState('name')
+  const [appliedSearchValue, setAppliedSearchValue] = useState<FilterValue>('')
+  const [appliedFilters, setAppliedFilters] = useState<Record<string, FilterValue>>({})
 
   function toggle(id: string) {
     setExpanded(prev => ({ ...prev, [id]: prev[id] === false ? true : false }))
@@ -51,15 +71,35 @@ export default function MenuManagementPage() {
     setExpanded({})
   }
 
-  function matchesFilter(n: MenuNode): boolean {
-    const nameOk = !filterName || n.name.includes(filterName)
-    const statusOk = filterStatus === '__all__' || n.status === filterStatus
-    return nameOk && statusOk
+  function cellString(n: MenuNode, key: string): string {
+    const v = (n as unknown as Record<string, unknown>)[key]
+    return typeof v === 'string' ? v : ''
+  }
+
+  function matchField(value: FilterValue, cellStr: string): boolean {
+    if (typeof value === 'string') {
+      return cellStr.toLowerCase().includes(value.trim().toLowerCase())
+    }
+    if (Array.isArray(value)) {
+      if (value.length === 0) return true
+      return value.some((v) => cellStr.toLowerCase().includes(v.toLowerCase()))
+    }
+    return true
+  }
+
+  function nodeMatches(n: MenuNode): boolean {
+    if (!matchField(appliedSearchValue, cellString(n, appliedSearchField))) return false
+    for (const f of FILTER_FIELDS) {
+      const v = appliedFilters[f.key]
+      if (v === undefined) continue
+      if (!matchField(v, cellString(n, f.key))) return false
+    }
+    return true
   }
 
   function filterTree(nodes: MenuNode[], out: FlatRow[], depth: number) {
     for (const n of nodes) {
-      if (matchesFilter(n)) {
+      if (nodeMatches(n)) {
         const hasKids = !!(n.children?.length)
         out.push({ node: n, depth, hasKids })
         if (hasKids) filterTree(n.children!, out, depth + 1)
@@ -69,8 +109,14 @@ export default function MenuManagementPage() {
     }
   }
 
+  const hasActive = appliedSearchValue !== '' && typeof appliedSearchValue === 'string' && (appliedSearchValue as string).trim() !== '' || FILTER_FIELDS.some((f) => {
+    const v = appliedFilters[f.key]
+    if (Array.isArray(v)) return v.length > 0
+    return typeof v === 'string' && v.trim() !== ''
+  })
+
   const rows: FlatRow[] = []
-  if (filterName || filterStatus !== '__all__') {
+  if (hasActive) {
     filterTree(menuTree, rows, 0)
   } else {
     collectVisibleRows(menuTree, expanded, 0, rows)
@@ -80,26 +126,28 @@ export default function MenuManagementPage() {
     <div className="space-y-4 -m-6 min-h-full bg-[#f9f9f9] p-6">
       <h1 className="text-xl font-semibold text-[#323232]">菜单管理</h1>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-1">
-          <span className="text-xs text-[#969696]">菜单名称</span>
-          <Input className="w-32 h-9 border-[#e9ebec] bg-white text-sm text-[#323232] placeholder:text-[#969696] focus-visible:border-[#ff7f32] focus-visible:ring-[#ff7f32]/25" value={filterName} onChange={e => setFilterName(e.target.value)} placeholder="请输入" />
-        </div>
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-24 h-9 border-[#e9ebec] bg-white text-sm text-[#323232]"><SelectValue placeholder="全部" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">全部</SelectItem>
-            <SelectItem value="启用">启用</SelectItem>
-            <SelectItem value="禁用">禁用</SelectItem>
-          </SelectContent>
-        </Select>
-        <Button size="sm" className="h-9 rounded-lg border-[#e9ebec] bg-white text-sm text-[#323232] hover:bg-[#f9f9f9]">查询</Button>
-        <Button size="sm" variant="outline" className="h-9 rounded-lg border-[#e9ebec] bg-white text-sm text-[#323232] hover:bg-[#f9f9f9]" onClick={() => { setFilterName(''); setFilterStatus('__all__') }}>重置</Button>
-        <div className="flex-1" />
-        <Button size="sm" className="h-9 rounded-lg border border-[#ffa05c] bg-[#ff7f32] px-3 text-sm font-normal text-[#f9f9f9] hover:bg-[#ff6a14]">新增</Button>
-        <Button size="sm" variant="outline" className="h-9 rounded-lg border-[#e9ebec] bg-white text-sm text-[#323232] hover:bg-[#f9f9f9]" onClick={expandAll}>展开</Button>
-        <Button size="sm" variant="outline" className="h-9 rounded-lg border-[#e9ebec] bg-white text-sm text-[#323232] hover:bg-[#f9f9f9]" onClick={collapseAll}>收起</Button>
-      </div>
+      <SearchFilterBar
+        searchFields={SEARCH_FIELDS}
+        filterFields={FILTER_FIELDS}
+        hasActiveFilters={hasActive}
+        onApply={({ searchField, searchValue, filters }) => {
+          setAppliedSearchField(searchField)
+          setAppliedSearchValue(searchValue)
+          setAppliedFilters(filters)
+        }}
+        onReset={() => {
+          setAppliedSearchField('name')
+          setAppliedSearchValue('')
+          setAppliedFilters({})
+        }}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button size="sm" className="h-9 rounded-lg border border-[#ffa05c] bg-[#ff7f32] px-3 text-sm font-normal text-white hover:bg-[#ff6a14]">新增</Button>
+            <Button size="sm" variant="outline" className="h-9 rounded-lg border-[#e9ebec] bg-white text-sm text-[#323232] hover:bg-[#f9f9f9]" onClick={expandAll}>展开</Button>
+            <Button size="sm" variant="outline" className="h-9 rounded-lg border-[#e9ebec] bg-white text-sm text-[#323232] hover:bg-[#f9f9f9]" onClick={collapseAll}>收起</Button>
+          </div>
+        }
+      />
 
       <div className="overflow-hidden rounded-lg border border-[#e9ebec] bg-white shadow-[2px_2px_8px_-2px_rgba(0,0,0,0.05)]">
         <Table className="text-sm">
