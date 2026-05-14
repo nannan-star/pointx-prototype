@@ -2900,12 +2900,6 @@
         '<p class="inst-pkg-detail-card__empty table-muted">未在配置中心找到该套餐定义，无法展开字段（演示）。</p></section>'
       );
     }
-    var statusTag =
-      pkg.status === '启用'
-        ? '<span class="tag tag--ok">' + escapeHtml(pkg.status) + '</span>'
-        : pkg.status
-          ? '<span class="tag">' + escapeHtml(pkg.status) + '</span>'
-          : '<span class="tag tag--off">—</span>';
     var specShow = pkg.spec || pkg.auth || '—';
     var innerDl =
       dlItem('商品类型', ddText(specShow)) +
@@ -2932,10 +2926,7 @@
       cid +
       '-title">' +
       escapeHtml(pkg.name) +
-      '</h4>' +
-      '<div class="inst-pkg-detail-card__badges">' +
-      statusTag +
-      '</div></header>' +
+      '</h4></header>' +
       '<dl class="desc-list inst-pkg-detail-dl">' +
       innerDl +
       '</dl></section>'
@@ -6031,19 +6022,20 @@
     return (
       '<div class="form-rules-page" id="form-rules-page">' +
       '<h1 class="page-title">系统表单校验规则</h1>' +
-      '<div class="panel form-rules-toolbar">' +
+      '<div class="form-rules-toolbar">' +
       '<div class="form-rules-split">' +
-      '<aside class="panel form-rules-aside" aria-label="模块导航">' +
+      '<div class="panel form-rules-main markdown-doc-panel">' +
+      '<div class="form-rules-scroll" id="form-rules-scroll-area">' +
+      sections +
+      '</div></div>' +
+      '<aside class="form-rules-aside" aria-label="模块导航">' +
       '<p class="form-rules-aside__title">模块</p>' +
       '<nav class="form-rules-nav" id="form-rules-nav-list">' +
       navItems +
       '</nav>' +
       '<p class="form-rules-nav-empty" id="form-rules-nav-empty" hidden>无匹配模块，请调整关键词。</p>' +
       '</aside>' +
-      '<div class="panel form-rules-main markdown-doc-panel">' +
-      '<div class="form-rules-scroll" id="form-rules-scroll-area">' +
-      sections +
-      '</div></div></div></div>'
+      '</div></div>'
     );
   }
 
@@ -7088,10 +7080,6 @@
       '<div class="panel">' +
       '<div class="panel__head-row" style="margin-bottom:1rem">' +
       '<h2 class="section-title-accent">按节点 · 资源用量</h2>' +
-      '<span class="toolbar" style="margin:0;gap:0.5rem">' +
-      '<a class="btn btn--primary btn--sm" href="#/client/resource/sdk">SDK 资源</a>' +
-      '<a class="btn btn--sm" href="#/client/resource/cors">CORS 账号</a>' +
-      '</span>' +
       '</div>' +
       '<div class="resource-region-grid">' +
       (cards || '<p style="margin:0;color:var(--text-muted)">暂无节点演示数据。</p>') +

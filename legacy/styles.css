@@ -542,7 +542,7 @@ a.sidebar__footer-action--link:hover {
   color: var(--text);
 }
 
-/* ---- 系统表单校验规则：两栏 + 模块搜索锚定 ---- */
+/* ---- 系统表单校验规则：主内容 + 右侧目录（与资源汇总页侧栏风格一致） ---- */
 .form-rules-toolbar {
   margin-bottom: 1rem;
   max-width: none;
@@ -595,8 +595,8 @@ a.sidebar__footer-action--link:hover {
 
 .form-rules-split {
   display: grid;
-  grid-template-columns: minmax(200px, 240px) minmax(0, 1fr);
-  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 260px);
+  gap: 1.5rem 2rem;
   align-items: start;
 }
 
@@ -607,41 +607,50 @@ a.sidebar__footer-action--link:hover {
   max-height: calc(100vh - 7.5rem);
   overflow: auto;
   margin-bottom: 0;
+  padding: 0.15rem 0 0.25rem 0.25rem;
+  border: none;
+  background: transparent;
+  box-shadow: none;
 }
 
 .form-rules-aside__title {
-  margin: 0 0 0.5rem;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text-muted);
+  margin: 0 0 0.85rem;
+  padding-left: 0.65rem;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text);
+  line-height: 1.35;
 }
 
 .form-rules-nav {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.1rem;
 }
 
 .form-rules-nav__link {
   display: block;
   width: 100%;
   margin: 0;
-  padding: 0.45rem 0.55rem;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.65rem 0.55rem 0.65rem;
+  border: none;
+  border-radius: 0;
   background: transparent;
   color: var(--text);
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 500;
   text-align: left;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  box-shadow: inset 3px 0 0 0 transparent;
+  transition: color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
 }
 
 .form-rules-nav__link:hover {
-  background: #f1f5f9;
+  color: var(--primary);
+  background-color: rgb(248 250 252 / 0.85);
 }
 
 .form-rules-nav__link:focus {
@@ -654,10 +663,10 @@ a.sidebar__footer-action--link:hover {
 }
 
 .form-rules-nav__link.is-active {
-  background: var(--primary-soft);
-  border-color: rgb(37 99 235 / 22%);
+  background: transparent;
   color: var(--primary);
   font-weight: 600;
+  box-shadow: inset 3px 0 0 0 var(--primary);
 }
 
 .form-rules-nav__link.is-hidden {
@@ -708,12 +717,20 @@ a.sidebar__footer-action--link:hover {
 
 @media (max-width: 900px) {
   .form-rules-split {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
   }
 
   .form-rules-aside {
+    order: -1;
     position: static;
     max-height: none;
+    padding-left: 0;
+  }
+
+  .form-rules-aside__title {
+    padding-left: 0;
   }
 }
 

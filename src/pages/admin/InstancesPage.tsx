@@ -1,0 +1,312 @@
+import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Plus, Search, Settings2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { instances, type Instance } from '@/data/instance-mock'
+import { InstanceCreateDrawer } from '@/components/InstanceCreateDrawer'
+import { InstanceEditDrawer } from '@/components/InstanceEditDrawer'
+import { cn } from '@/lib/utils'
+
+export default function InstancesPage() {
+  const [rows, setRows] = useState<Instance[]>(instances)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [editTarget, setEditTarget] = useState<string | null>(null)
+  const [guideName, setGuideName] = useState<string | null>(null)
+  const [query, setQuery] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return rows
+    return rows.filter(
+      (r) =>
+        r.company.toLowerCase().includes(q) ||
+        r.name.toLowerCase().includes(q) ||
+        (r.accountPrefix ?? '').toLowerCase().includes(q) ||
+        r.packageNames.some((n) => n.toLowerCase().includes(q))
+    )
+  }, [rows, query])
+
+  const total = filtered.length
+  const pageCount = Math.max(1, Math.ceil(total / pageSize))
+  const safePage = Math.min(page, pageCount)
+  const pageRows = useMemo(
+    () => filtered.slice((safePage - 1) * pageSize, safePage * pageSize),
+    [filtered, safePage, pageSize]
+  )
+
+  useEffect(() => {
+    setPage(1)
+  }, [query, pageSize])
+
+  useEffect(() => {
+    if (page > pageCount) setPage(pageCount)
+  }, [page, pageCount])
+
+  function handleCreated(name: string) {
+    setGuideName(name)
+    setRows([...instances])
+  }
+
+  function handleEditSaved() {
+    setEditTarget(null)
+    setRows([...instances])
+  }
+
+  return (
+    <div className="space-y-4 -m-6 min-h-full bg-[#f9f9f9] p-6">
+      {guideName && (
+        <div
+          className="flex items-center justify-between rounded-lg border border-[#e9ebec] bg-[#fff3e5] px-4 py-3 shadow-[2px_2px_8px_-2px_rgba(0,0,0,0.05)]"
+          role="status"
+        >
+          <div className="space-y-0.5">
+            <p className="text-sm font-medium text-[#323232]">实例「{guideName}」已创建</p>
+            <p className="text-xs text-[#969696]">
+              建议尽快配置 <strong className="text-[#323232]">SDK 服务套餐</strong>
+              ，便于资源池履约与开通。
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              className="h-8 rounded-lg border border-[#ffa05c] bg-[#ff7f32] text-[#f9f9f9] hover:bg-[#ff6a14]"
+              onClick={() => {
+                setEditTarget(guideName)
+                setGuideName(null)
+              }}
+            >
+              去配置 SDK 套餐
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 text-[#323232] hover:bg-white/60"
+              onClick={() => setGuideName(null)}
+            >
+              知道了
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full max-w-md">
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#969696]"
+            aria-hidden
+          />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Input your content"
+            className="h-9 border-[#e9ebec] bg-white pl-9 text-sm text-[#323232] placeholder:text-[#969696] focus-visible:border-[#ff7f32] focus-visible:ring-[#ff7f32]/25"
+          />
+        </div>
+        <Button
+          type="button"
+          onClick={() => setCreateOpen(true)}
+          className="h-8 shrink-0 gap-1 rounded-lg border border-[#ffa05c] bg-[#ff7f32] px-3 text-sm font-normal text-[#f9f9f9] hover:bg-[#ff6a14]"
+        >
+          <Plus className="size-4" strokeWidth={2.5} />
+          新增实例
+        </Button>
+      </div>
+
+      <div className="overflow-hidden rounded-lg border border-[#e9ebec] bg-white shadow-[2px_2px_8px_-2px_rgba(0,0,0,0.05)]">
+        <Table className="text-sm">
+          <TableHeader className="[&_tr]:border-b [&_tr]:border-[#e9ebec]">
+            <TableRow className="border-0 hover:bg-transparent">
+              <TableHead className="h-10 rounded-tl-lg bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">
+                企业名称
+              </TableHead>
+              <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">
+                实例名称
+              </TableHead>
+              <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">
+                设备自动入库
+              </TableHead>
+              <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">
+                激活方式
+              </TableHead>
+              <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">
+                帐号前缀
+              </TableHead>
+              <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">
+                SDK套餐状态
+              </TableHead>
+              <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">
+                绑定套餐
+              </TableHead>
+              <TableHead className="h-10 rounded-tr-lg bg-[rgba(233,235,236,0.4)] px-4 text-right text-xs font-semibold text-[#323232]">
+                <span className="inline-flex w-full items-center justify-end gap-1">
+                  操作
+                  <Settings2 className="size-3.5 text-[#969696]" aria-hidden />
+                </span>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {pageRows.map((r, i) => {
+              const globalIndex = (safePage - 1) * pageSize + i
+              const striped = globalIndex % 2 === 1
+              const configured = r.packageNames.length > 0
+              return (
+                <TableRow
+                  key={r.name}
+                  className={cn(
+                    'border-b border-[#e9ebec] hover:bg-[rgba(233,235,236,0.12)] last:border-b-0',
+                    striped && 'bg-[rgba(233,235,236,0.2)]'
+                  )}
+                >
+                  <TableCell className="px-4 py-3 text-[14px] leading-[22px] text-[#323232]">
+                    {r.company}
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-[14px] leading-[22px]">
+                    <Link
+                      to={`/admin/instances/detail?name=${encodeURIComponent(r.name)}`}
+                      className="text-[#ff7f32] underline decoration-solid underline-offset-2 hover:text-[#e56718]"
+                    >
+                      {r.name}
+                    </Link>
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-[14px] leading-[22px] text-[#323232]">
+                    {r.deviceAutoStock || '—'}
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-[14px] leading-[22px] text-[#323232]">
+                    {r.activateMode || '—'}
+                  </TableCell>
+                  <TableCell className="px-4 py-3 font-mono text-[14px] leading-[22px] text-[#323232]">
+                    {r.accountPrefix || '—'}
+                  </TableCell>
+                  <TableCell className="px-4 py-3">
+                    {configured ? (
+                      <span className="inline-flex h-6 items-center rounded-lg bg-[#e9f7eb] px-2 text-[14px] leading-[22px] text-[#35b85e]">
+                        已配置
+                      </span>
+                    ) : (
+                      <span className="inline-flex h-6 items-center rounded-lg bg-[#fff3e5] px-2 text-[14px] leading-[22px] text-[#ff7f32]">
+                        未配置
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell className="max-w-[220px] px-4 py-3 text-[14px] leading-[22px] text-[#323232]">
+                    {configured ? (
+                      <div className="flex flex-wrap gap-1">
+                        {r.packageNames.map((n) => (
+                          <span
+                            key={n}
+                            className="inline-flex items-center rounded-lg border border-[#e9ebec] bg-white px-2 py-0.5 text-xs text-[#323232]"
+                          >
+                            {n}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-[#969696]">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-right">
+                    <div className="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setEditTarget(r.name)}
+                        className="inline-flex h-6 min-w-[48px] items-center justify-center rounded-lg border border-[#e9ebec] bg-white px-3 text-xs leading-5 text-[#323232] transition-colors hover:bg-[#f9f9f9] cursor-pointer"
+                      >
+                        编辑
+                      </button>
+                      {configured ? (
+                        <Link
+                          to={`/admin/instances/detail?name=${encodeURIComponent(r.name)}`}
+                          className="inline-flex h-6 min-w-[48px] items-center justify-center rounded-lg border border-[#e9ebec] bg-white px-3 text-xs leading-5 text-[#323232] transition-colors hover:bg-[#f9f9f9]"
+                        >
+                          详情
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setEditTarget(r.name)}
+                          className="inline-flex h-6 min-w-[48px] items-center justify-center rounded-lg border border-[#e9ebec] bg-white px-3 text-xs leading-5 text-[#323232] transition-colors hover:bg-[#f9f9f9] cursor-pointer"
+                        >
+                          配置
+                        </button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )
+            })}
+          </TableBody>
+        </Table>
+
+        <div className="flex flex-col gap-3 border-t border-[#e9ebec] bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-[#969696]">共 {total} 条</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 border-[#e9ebec] bg-white text-[#323232] hover:bg-[#f9f9f9]"
+              disabled={safePage <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              上一页
+            </Button>
+            <span className="text-sm text-[#323232]">
+              {safePage} / {pageCount}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 border-[#e9ebec] bg-white text-[#323232] hover:bg-[#f9f9f9]"
+              disabled={safePage >= pageCount}
+              onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+            >
+              下一页
+            </Button>
+            <Select
+              value={String(pageSize)}
+              onValueChange={(v) => setPageSize(Number(v))}
+            >
+              <SelectTrigger className="h-8 w-[120px] border-[#e9ebec] bg-white text-sm text-[#323232]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10 条/页</SelectItem>
+                <SelectItem value="20">20 条/页</SelectItem>
+                <SelectItem value="50">50 条/页</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      <InstanceCreateDrawer open={createOpen} onOpenChange={setCreateOpen} onCreated={handleCreated} />
+      <InstanceEditDrawer
+        instanceName={editTarget}
+        onOpenChange={(open) => {
+          if (!open) setEditTarget(null)
+        }}
+        onSaved={handleEditSaved}
+      />
+    </div>
+  )
+}
