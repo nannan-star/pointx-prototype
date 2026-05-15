@@ -26,6 +26,32 @@ function groupByCompany(data: ResourcePoolLine[]): CompanyGroup[] {
   return order.map(n => map.get(n)!)
 }
 
+/** 企业下资源池行涉及的服务节点（去重、保持出现顺序） */
+function uniqueServiceNodes(lines: ResourcePoolLine[]): string[] {
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const l of lines) {
+    for (const n of l.serviceNodes) {
+      if (!seen.has(n)) {
+        seen.add(n)
+        out.push(n)
+      }
+    }
+  }
+  return out
+}
+
+/** 角标：任一行为全球转发则展示「全球转发」，否则「区域限定」 */
+function companyForwardingLabel(lines: ResourcePoolLine[]): '全球转发' | '区域限定' {
+  return lines.some((l) => l.forwardingScope === 'global') ? '全球转发' : '区域限定'
+}
+
+/** 副标题：仅展示区域/节点名称，用顿号连接 */
+function companyRegionsLabel(lines: ResourcePoolLine[]): string {
+  const nodes = uniqueServiceNodes(lines)
+  return nodes.length > 0 ? nodes.join('、') : '—'
+}
+
 export default function PoolPage() {
   const [keyword, setKeyword] = useState('')
   const [poolLines, setPoolLines] = useState<ResourcePoolLine[]>(() => [...resourcePools])
@@ -116,9 +142,8 @@ export default function PoolPage() {
           <div className="flex-1 overflow-y-auto">
             {paged.map(c => {
               const active = selected?.name === c.name
-              const configured = c.lines.filter(l => l.total > 0).length
-              const total = c.lines.length
-              const allDone = configured === total
+              const scopeLabel = companyForwardingLabel(c.lines)
+              const isGlobal = scopeLabel === '全球转发'
 
               return (
                 <div
@@ -133,17 +158,36 @@ export default function PoolPage() {
                 >
                   <div className="flex items-center justify-between">
                     <span className="mr-2 truncate text-sm font-semibold text-[#323232]">{c.name}</span>
-                    <span className="flex shrink-0 items-center gap-1 rounded-[3px] border border-[#b7e4c1] bg-[#e8f6ec] px-1.5 py-0.5">
-                      <span className="size-[5px] rounded-full bg-[#117a35]" />
-                      <span className="whitespace-nowrap text-[11px] font-medium text-[#117a35]">
-                        {allDone ? '已配置' : `${configured}/${total} 已配置`}
+                    <span
+                      className={cn(
+                        'flex shrink-0 items-center gap-1 rounded-[3px] border px-1.5 py-0.5',
+                        isGlobal
+                          ? 'border-[#b8d4f0] bg-[#eef6ff]'
+                          : 'border-[#c8e6c9] bg-[#e8f5e9]',
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'size-[5px] rounded-full',
+                          isGlobal ? 'bg-[#1565b3]' : 'bg-[#2e7d32]',
+                        )}
+                      />
+                      <span
+                        className={cn(
+                          'whitespace-nowrap text-[11px] font-medium',
+                          isGlobal ? 'text-[#1565b3]' : 'text-[#2e7d32]',
+                        )}
+                      >
+                        {scopeLabel}
                       </span>
                     </span>
                   </div>
-                  <div className="flex items-center gap-[10px] text-xs text-[#969696]">
-                    <span>{c.id}</span>
-                    <span>·</span>
-                    <span>{total} 个商品</span>
+                  <div className="flex min-w-0 flex-col gap-0.5 text-xs text-[#969696]">
+                    <div className="flex items-center gap-[10px]">
+                      <span className="shrink-0">{c.id}</span>
+                      <span className="shrink-0">·</span>
+                      <span className="min-w-0 truncate">{companyRegionsLabel(c.lines)}</span>
+                    </div>
                   </div>
                 </div>
               )
@@ -210,6 +254,7 @@ function RightPanel({ company, onSaveConfig }: { company: CompanyGroup; onSaveCo
       instance: l.instance,
       product: l.product,
       spec: l.spec,
+      serviceNodes: l.serviceNodes,
       isDefault: l.isDefault,
     })
     setRenewOpen(true)
@@ -222,10 +267,10 @@ function RightPanel({ company, onSaveConfig }: { company: CompanyGroup; onSaveCo
         <div className="flex shrink-0 items-center justify-between rounded-lg border border-[#e9ebec] bg-white px-5 py-4">
           <div className="flex flex-col gap-1">
             <span className="text-base font-semibold text-[#323232]">{company.name}</span>
-            <div className="flex items-center gap-[10px] text-xs text-[#969696]">
-              <span>{company.id}</span>
-              <span>· {company.lines.length} 个商品</span>
-              <span>· 已用 {usedQty} / {totalQty} ({pct}%)</span>
+            <div className="flex min-w-0 flex-wrap items-center gap-x-[10px] gap-y-0.5 text-xs text-[#969696]">
+              <span className="shrink-0">{company.id}</span>
+              <span className="min-w-0 truncate">· {companyRegionsLabel(company.lines)}</span>
+              <span className="shrink-0">· 已用 {usedQty} / {totalQty} ({pct}%)</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -246,6 +291,7 @@ function RightPanel({ company, onSaveConfig }: { company: CompanyGroup; onSaveCo
                 <tr className="bg-[#f5f7f9]">
                   <th className="h-10 w-[140px] px-3 text-left text-[13px] font-semibold text-[#666]">商品名称</th>
                   <th className="h-10 w-[140px] px-3 text-left text-[13px] font-semibold text-[#666]">商品规格</th>
+                  <th className="h-10 w-[160px] px-3 text-left text-[13px] font-semibold text-[#666]">服务节点</th>
                   <th className="h-10 w-[120px] px-3 text-left text-[12px] font-semibold text-[#666]">是否默认规格</th>
                   <th className="h-10 w-[113px] px-3 text-right text-[12px] font-semibold text-[#666]">总数量</th>
                   <th className="h-10 w-[113px] px-3 text-right text-[12px] font-semibold text-[#666]">已使用</th>
@@ -260,6 +306,11 @@ function RightPanel({ company, onSaveConfig }: { company: CompanyGroup; onSaveCo
                     <td className="h-14 px-3">
                       <span className="block truncate">
                         {l.spec}
+                      </span>
+                    </td>
+                    <td className="h-14 max-w-[200px] px-3 text-[13px] text-[#323232]">
+                      <span className="block truncate">
+                        {l.serviceNodes.length > 0 ? l.serviceNodes.join('、') : '—'}
                       </span>
                     </td>
                     <td className="h-14 px-3">

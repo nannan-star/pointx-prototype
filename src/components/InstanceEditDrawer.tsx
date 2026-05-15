@@ -25,6 +25,7 @@ import { instances } from '@/data/instance-mock'
 import { ChevronDown, X } from 'lucide-react'
 
 const availablePackages = ['全球定位增强标准包', '星基融合旗舰包', '地基差分增强包']
+const SERVICE_NODES = ['中国', '亚太', '南美', '日本', '北美', '欧洲', '土耳其'] as const
 
 interface InstanceEditDrawerProps {
   instanceName: string | null
@@ -40,7 +41,10 @@ export function InstanceEditDrawer({ instanceName, onOpenChange, onSaved }: Inst
   const [autoStock, setAutoStock] = useState('是')
   const [activateMode, setActivateMode] = useState('')
   const [accountPrefix, setAccountPrefix] = useState('')
+  const [resourceSharing, setResourceSharing] = useState('')
+  const [selectedNodes, setSelectedNodes] = useState<string[]>([])
   const [pkgPopoverOpen, setPkgPopoverOpen] = useState(false)
+  const [nodePopoverOpen, setNodePopoverOpen] = useState(false)
 
   useEffect(() => {
     if (inst) {
@@ -48,6 +52,8 @@ export function InstanceEditDrawer({ instanceName, onOpenChange, onSaved }: Inst
       setAutoStock(inst.deviceAutoStock || '是')
       setActivateMode(inst.activateMode || '')
       setAccountPrefix(inst.accountPrefix || '')
+      setResourceSharing(inst.resourceSharing || '')
+      setSelectedNodes(inst.serviceNodes || [])
     }
   }, [inst])
 
@@ -59,6 +65,12 @@ export function InstanceEditDrawer({ instanceName, onOpenChange, onSaved }: Inst
 
   function removePkg(pkg: string) {
     setSelectedPkgs((prev) => prev.filter((p) => p !== pkg))
+  }
+
+  function toggleNode(node: string) {
+    setSelectedNodes((prev) =>
+      prev.includes(node) ? prev.filter((n) => n !== node) : [...prev, node]
+    )
   }
 
   function handleSave() {
@@ -95,6 +107,85 @@ export function InstanceEditDrawer({ instanceName, onOpenChange, onSaved }: Inst
                   {inst.name}
                 </span>
               </div>
+            </div>
+
+            {/* 资源共享情况 */}
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-normal text-[#646464]">
+                <span className="text-[#eb2e2e]">*</span> 资源共享情况
+              </label>
+              <Select value={resourceSharing} onValueChange={setResourceSharing}>
+                <SelectTrigger className="h-8 w-full rounded-lg border-[#e9ebec] bg-white text-sm text-[#323232]">
+                  <SelectValue placeholder="请选择" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="全球分发">全球分发</SelectItem>
+                  <SelectItem value="区域限定">区域限定</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* 服务节点 - 多选下拉 */}
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-normal text-[#646464]">
+                <span className="text-[#eb2e2e]">*</span> 服务节点
+              </label>
+              <Popover open={nodePopoverOpen} onOpenChange={setNodePopoverOpen}>
+                <PopoverTrigger asChild>
+                  <div className="flex min-h-[32px] w-full cursor-pointer flex-wrap items-center gap-1.5 rounded-lg border border-[#e9ebec] bg-white px-2.5 py-1.5 transition-colors hover:border-[#ffa05c] focus-within:border-[#ff7f32] focus-within:ring-2 focus-within:ring-[#ff7f32]/20">
+                    {selectedNodes.length === 0 && (
+                      <span className="text-sm text-[#969696]">请选择</span>
+                    )}
+                    {selectedNodes.map((node) => (
+                      <span
+                        key={node}
+                        className="inline-flex items-center gap-0.5 whitespace-nowrap rounded-md bg-[#fff3e5] px-1.5 py-0.5 text-xs leading-5 text-[#ff7f32] transition-colors hover:bg-[#ffe8d5]"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {node}
+                        <button
+                          type="button"
+                          className="inline-flex size-4 items-center justify-center rounded-sm text-[#ff7f32] transition-colors hover:bg-[#ff7f32]/10 hover:text-[#e06520]"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleNode(node)
+                          }}
+                        >
+                          <X className="size-3" />
+                        </button>
+                      </span>
+                    ))}
+                    <ChevronDown className="ml-auto size-4 shrink-0 text-[#969696] transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-[--radix-popover-trigger-width] rounded-lg border border-[#e9ebec] p-1 shadow-lg"
+                  align="start"
+                  sideOffset={4}
+                >
+                  {SERVICE_NODES.map((node) => {
+                    const checked = selectedNodes.includes(node)
+                    return (
+                      <label
+                        key={node}
+                        className={
+                          'flex cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors ' +
+                          (checked
+                            ? 'bg-[#fff8f2] text-[#ff7f32]'
+                            : 'text-[#323232] hover:bg-[#f5f5f5]')
+                        }
+                      >
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={() => toggleNode(node)}
+                          className="size-4 rounded border-[#dcdfe1] transition-colors data-[state=checked]:border-[#ff7f32] data-[state=checked]:bg-[#ff7f32]"
+                        />
+                        <span className="select-none">{node}</span>
+                      </label>
+                    )
+                  })}
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* SDK 服务套餐 */}

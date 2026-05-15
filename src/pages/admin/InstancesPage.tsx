@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Settings2 } from 'lucide-react'
+import { Settings2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -167,7 +167,6 @@ export default function InstancesPage() {
             onClick={() => setCreateOpen(true)}
             className="h-9 shrink-0 gap-1 rounded-lg border border-[#ffa05c] bg-[#ff7f32] px-4 text-sm font-normal text-white hover:bg-[#ff6a14]"
           >
-            <Plus className="size-4" strokeWidth={2.5} />
             新增实例
           </Button>
         }

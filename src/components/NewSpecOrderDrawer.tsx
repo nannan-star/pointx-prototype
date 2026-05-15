@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import { CircleHelp } from 'lucide-react'
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter,
 } from '@/components/ui/sheet'
@@ -9,6 +10,9 @@ import { Textarea } from '@/components/ui/textarea'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
+import {
+  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { enterprises } from '@/data/admin-system-mock'
 import { products, specs } from '@/data/config-mock'
 import { instances } from '@/data/instance-mock'
@@ -26,6 +30,7 @@ export function NewSpecOrderDrawer({ open, onOpenChange, fixedCompany }: NewSpec
   const [productType, setProductType] = useState<ProductType>('SDK')
   const [productName, setProductName] = useState(products[0]?.name ?? '')
   const [specId, setSpecId] = useState('')
+  const [serviceNode, setServiceNode] = useState('')
   const [sdkQty, setSdkQty] = useState('10')
   const [corsQty, setCorsQty] = useState('10')
   const [sapRef, setSapRef] = useState('')
@@ -35,9 +40,17 @@ export function NewSpecOrderDrawer({ open, onOpenChange, fixedCompany }: NewSpec
     return specs.filter(s => s.template === productName || s.product.includes(productName.replace('导航SDK内置账号', 'SDK内置账号')))
   }, [productName])
 
+  const currentCompany = fixedCompany || company
+  const instRow = useMemo(() => instances.find(i => i.company === currentCompany.trim()), [currentCompany])
+  const availableNodes = useMemo(() => instRow?.serviceNodes ?? [], [instRow])
+
   useEffect(() => {
     setSpecId('')
   }, [filteredSpecs])
+
+  useEffect(() => {
+    setServiceNode('')
+  }, [availableNodes])
 
   const handleProductChange = (val: string) => {
     setProductName(val)
@@ -47,10 +60,10 @@ export function NewSpecOrderDrawer({ open, onOpenChange, fixedCompany }: NewSpec
   const handleSubmit = () => {
     const co = (fixedCompany || company).trim()
     if (!co) { alert('请选择企业名称'); return }
-    const instRow = instances.find(i => i.company === co)
     if (!instRow) { alert('该客户下暂无实例，请先在实例模块创建'); return }
     if (!productName) { alert('请选择商品'); return }
     if (!specId) { alert('请选择商品规格'); return }
+    if (!serviceNode) { alert('请选择服务节点'); return }
 
     if (productType === 'SDK') {
       const qty = parseInt(sdkQty, 10)
@@ -74,6 +87,7 @@ export function NewSpecOrderDrawer({ open, onOpenChange, fixedCompany }: NewSpec
       setProductType('SDK')
       setProductName(products[0]?.name ?? '')
       setSpecId('')
+      setServiceNode('')
       setSdkQty('10')
       setCorsQty('10')
       setSapRef('')
@@ -116,7 +130,7 @@ export function NewSpecOrderDrawer({ open, onOpenChange, fixedCompany }: NewSpec
                     <span className="text-[#eb2e2e]">*</span> 企业名称
                   </Label>
                   <Select value={company} onValueChange={setCompany}>
-                    <SelectTrigger className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm">
+                    <SelectTrigger className="h-8 w-[300px] rounded-lg border-[#e9ebec] bg-white text-sm">
                       <SelectValue placeholder="请选择企业" />
                     </SelectTrigger>
                     <SelectContent>
@@ -133,7 +147,7 @@ export function NewSpecOrderDrawer({ open, onOpenChange, fixedCompany }: NewSpec
                   <span className="text-[#eb2e2e]">*</span> 商品类型
                 </Label>
                 <Select value={productType} onValueChange={v => setProductType(v as ProductType)}>
-                  <SelectTrigger className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm">
+                  <SelectTrigger className="h-8 w-[300px] rounded-lg border-[#e9ebec] bg-white text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -148,7 +162,7 @@ export function NewSpecOrderDrawer({ open, onOpenChange, fixedCompany }: NewSpec
                   <span className="text-[#eb2e2e]">*</span> 商品
                 </Label>
                 <Select value={productName} onValueChange={handleProductChange}>
-                  <SelectTrigger className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm">
+                  <SelectTrigger className="h-8 w-[300px] rounded-lg border-[#e9ebec] bg-white text-sm">
                     <SelectValue placeholder="请选择商品" />
                   </SelectTrigger>
                   <SelectContent>
@@ -164,7 +178,7 @@ export function NewSpecOrderDrawer({ open, onOpenChange, fixedCompany }: NewSpec
                   <span className="text-[#eb2e2e]">*</span> 商品规格
                 </Label>
                 <Select value={specId} onValueChange={setSpecId}>
-                  <SelectTrigger className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm">
+                  <SelectTrigger className="h-8 w-[300px] rounded-lg border-[#e9ebec] bg-white text-sm">
                     <SelectValue placeholder="请选择规格" />
                   </SelectTrigger>
                   <SelectContent>
@@ -174,6 +188,38 @@ export function NewSpecOrderDrawer({ open, onOpenChange, fixedCompany }: NewSpec
                       ))
                     ) : (
                       <SelectItem value="__empty" disabled>该商品下暂无规格</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-1">
+                  <Label className="text-sm font-normal text-[#646464]">
+                    <span className="text-[#eb2e2e]">*</span> 服务节点
+                  </Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <CircleHelp className="size-3.5 text-[#969696] cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[240px] text-xs">
+                        服务节点来源于该客户创建实例时选择的节点，只能从已有节点中选择一个作为本次下单的目标节点。
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <Select value={serviceNode} onValueChange={setServiceNode}>
+                  <SelectTrigger className="h-8 w-[300px] rounded-lg border-[#e9ebec] bg-white text-sm">
+                    <SelectValue placeholder="请选择服务节点" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableNodes.length > 0 ? (
+                      availableNodes.map(node => (
+                        <SelectItem key={node} value={node}>{node}</SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="__empty" disabled>该客户暂无可用服务节点</SelectItem>
                     )}
                   </SelectContent>
                 </Select>
@@ -190,7 +236,7 @@ export function NewSpecOrderDrawer({ open, onOpenChange, fixedCompany }: NewSpec
                     step={1}
                     value={sdkQty}
                     onChange={e => setSdkQty(e.target.value)}
-                    className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm"
+                    className="h-8 w-[300px] rounded-lg border-[#e9ebec] bg-white text-sm"
                   />
                 </div>
               ) : (
@@ -204,7 +250,7 @@ export function NewSpecOrderDrawer({ open, onOpenChange, fixedCompany }: NewSpec
                     step={1}
                     value={corsQty}
                     onChange={e => setCorsQty(e.target.value)}
-                    className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm"
+                    className="h-8 w-[300px] rounded-lg border-[#e9ebec] bg-white text-sm"
                   />
                 </div>
               )}
@@ -215,7 +261,7 @@ export function NewSpecOrderDrawer({ open, onOpenChange, fixedCompany }: NewSpec
                   value={sapRef}
                   onChange={e => setSapRef(e.target.value)}
                   placeholder="SAP 参考号或合同行"
-                  className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#c5c5c5]"
+                  className="h-8 w-[300px] rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#c5c5c5]"
                 />
               </div>
 
@@ -226,7 +272,7 @@ export function NewSpecOrderDrawer({ open, onOpenChange, fixedCompany }: NewSpec
                   onChange={e => setRemark(e.target.value)}
                   rows={2}
                   placeholder="可选"
-                  className="rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#c5c5c5] resize-none"
+                  className="w-[300px] rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#c5c5c5] resize-none"
                 />
               </div>
             </div>

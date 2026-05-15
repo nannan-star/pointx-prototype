@@ -11,6 +11,7 @@ export interface RenewTarget {
   instance: string
   product: string
   spec: string
+  serviceNodes: string[]
   isDefault: boolean
 }
 
@@ -68,6 +69,10 @@ export function RenewResourceDrawer({ open, onOpenChange, target }: RenewResourc
                   ['实例', target.instance],
                   ['商品', target.product],
                   ['规格', target.spec],
+                  [
+                    '服务节点',
+                    target.serviceNodes.length > 0 ? target.serviceNodes.join('、') : '—',
+                  ],
                   ['默认规格', target.isDefault ? '是' : '否'],
                 ] as const).map(([label, value]) => (
                   <div key={label} className="flex items-center justify-between px-4 py-2.5">

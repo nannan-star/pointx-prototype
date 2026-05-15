@@ -11,6 +11,14 @@
   - 公共组件放 src/components/
   - 不要用 any，给明确类型
 
+  ## 表单字段联动规范
+  新增或修改表单字段时，必须主动检查并同步以下所有相关位置（不需要每次都问用户）：
+  1. **mock 数据**：Instance 接口类型定义 + mock 数据默认值
+  2. **新增表单**：如 InstanceCreateDrawer
+  3. **编辑表单**：如 InstanceEditDrawer、详情页内编辑抽屉
+  4. **详情页展示**：如 InstanceDetailPage 基本信息区
+  5. **表单宽度统一**：所有抽屉内的 Select / Input 统一使用 `w-[300px]`
+
   2. 迁移时的提示词结构
 
   每次让 AI 转换一个模块时，这样给：
