@@ -8,7 +8,11 @@ import {
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
@@ -18,6 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { instances } from '@/data/instance-mock'
+import { ChevronDown, X } from 'lucide-react'
 
 const availablePackages = ['全球定位增强标准包', '星基融合旗舰包', '地基差分增强包']
 
@@ -35,6 +40,7 @@ export function InstanceEditDrawer({ instanceName, onOpenChange, onSaved }: Inst
   const [autoStock, setAutoStock] = useState('是')
   const [activateMode, setActivateMode] = useState('')
   const [accountPrefix, setAccountPrefix] = useState('')
+  const [pkgPopoverOpen, setPkgPopoverOpen] = useState(false)
 
   useEffect(() => {
     if (inst) {
@@ -51,8 +57,12 @@ export function InstanceEditDrawer({ instanceName, onOpenChange, onSaved }: Inst
     )
   }
 
+  function removePkg(pkg: string) {
+    setSelectedPkgs((prev) => prev.filter((p) => p !== pkg))
+  }
+
   function handleSave() {
-    if (!activateMode) return
+    if (!activateMode || selectedPkgs.length === 0) return
     onSaved()
   }
 
@@ -60,34 +70,88 @@ export function InstanceEditDrawer({ instanceName, onOpenChange, onSaved }: Inst
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-[400px] overflow-y-auto p-0">
-        <SheetHeader className="border-b border-[#e9ebec] p-4 pb-3">
-          <SheetTitle className="text-sm font-semibold text-[#323232]">编辑实例 · {inst.name}</SheetTitle>
+      <SheetContent className="sm:max-w-[400px] overflow-y-auto p-0 flex flex-col">
+        <SheetHeader className="border-b border-[#e9ebec] px-4 py-4 pb-3">
+          <SheetTitle className="text-sm font-semibold text-[#323232]">配置实例</SheetTitle>
         </SheetHeader>
+
         <div className="flex-1 overflow-y-auto px-4 py-4">
           <div className="flex flex-col gap-[18px]">
-            {/* SDK 服务套餐 */}
-            <div className="flex flex-col gap-1">
-              <Label className="text-sm font-normal text-[#646464]">SDK 服务套餐</Label>
-              <div className="space-y-2 rounded-lg border border-[#e9ebec] p-3">
-                {availablePackages.map((pkg) => (
-                  <div key={pkg} className="flex items-center gap-2">
-                    <Checkbox
-                      id={`pkg-${pkg}`}
-                      checked={selectedPkgs.includes(pkg)}
-                      onCheckedChange={() => togglePkg(pkg)}
-                    />
-                    <Label htmlFor={`pkg-${pkg}`} className="text-sm font-normal text-[#323232] cursor-pointer">
-                      {pkg}
-                    </Label>
-                  </div>
-                ))}
+            {/* 企业名称 & 实例名称 */}
+            <div className="rounded-lg border border-[#e9ebec] overflow-hidden">
+              <div className="flex items-center h-9 border-b border-[#e9ebec]">
+                <span className="bg-[#e9ebec]/40 w-[88px] shrink-0 h-full flex items-center justify-center text-sm text-[#323232]">
+                  企业名称
+                </span>
+                <span className="px-3 text-sm font-semibold text-[#323232] truncate">
+                  {inst.company}
+                </span>
+              </div>
+              <div className="flex items-center h-9">
+                <span className="bg-[#e9ebec]/40 w-[88px] shrink-0 h-full flex items-center justify-center text-sm text-[#323232]">
+                  实例名称
+                </span>
+                <span className="px-3 text-sm font-semibold text-[#323232] truncate">
+                  {inst.name}
+                </span>
               </div>
             </div>
+
+            {/* SDK 服务套餐 */}
             <div className="flex flex-col gap-1">
-              <Label className="text-sm font-normal text-[#646464]">
+              <label className="text-sm font-normal text-[#646464]">
+                <span className="text-[#eb2e2e]">*</span> SDK 服务套餐
+              </label>
+              <Popover open={pkgPopoverOpen} onOpenChange={setPkgPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <div className="relative flex items-center min-h-[32px] w-full cursor-pointer rounded-lg border border-[#e9ebec] bg-white px-2 py-1 gap-1 flex-wrap">
+                    {selectedPkgs.length === 0 && (
+                      <span className="text-sm text-[#969696]">请选择</span>
+                    )}
+                    {selectedPkgs.map((pkg) => (
+                      <span
+                        key={pkg}
+                        className="inline-flex items-center gap-1 rounded-md bg-[#fff3e5] px-2 py-0.5 text-xs text-[#ff7f32] whitespace-nowrap"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {pkg}
+                        <button
+                          type="button"
+                          className="inline-flex items-center justify-center text-[#ff7f32] hover:text-[#e06520]"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            removePkg(pkg)
+                          }}
+                        >
+                          <X className="size-3" />
+                        </button>
+                      </span>
+                    ))}
+                    <ChevronDown className="ml-auto size-4 shrink-0 text-[#969696]" />
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-2" align="start">
+                  {availablePackages.map((pkg) => (
+                    <label
+                      key={pkg}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-[#f5f5f5] cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={selectedPkgs.includes(pkg)}
+                        onCheckedChange={() => togglePkg(pkg)}
+                      />
+                      <span className="text-sm text-[#323232]">{pkg}</span>
+                    </label>
+                  ))}
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* 设备自动入库 */}
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-normal text-[#646464]">
                 <span className="text-[#eb2e2e]">*</span> 设备自动入库
-              </Label>
+              </label>
               <Select value={autoStock} onValueChange={setAutoStock}>
                 <SelectTrigger className="h-8 w-full rounded-lg border-[#e9ebec] bg-white text-sm text-[#323232]">
                   <SelectValue />
@@ -98,10 +162,12 @@ export function InstanceEditDrawer({ instanceName, onOpenChange, onSaved }: Inst
                 </SelectContent>
               </Select>
             </div>
+
+            {/* 激活方式 */}
             <div className="flex flex-col gap-1">
-              <Label className="text-sm font-normal text-[#646464]">
+              <label className="text-sm font-normal text-[#646464]">
                 <span className="text-[#eb2e2e]">*</span> 激活方式
-              </Label>
+              </label>
               <Select value={activateMode} onValueChange={setActivateMode}>
                 <SelectTrigger className="h-8 w-full rounded-lg border-[#e9ebec] bg-white text-sm text-[#323232]">
                   <SelectValue placeholder="请选择" />
@@ -113,17 +179,20 @@ export function InstanceEditDrawer({ instanceName, onOpenChange, onSaved }: Inst
                 </SelectContent>
               </Select>
             </div>
+
+            {/* 账号前缀 */}
             <div className="flex flex-col gap-1">
-              <Label className="text-sm font-normal text-[#646464]">帐号前缀</Label>
+              <label className="text-sm font-normal text-[#646464]">账号前缀</label>
               <Input
                 value={accountPrefix}
                 onChange={(e) => setAccountPrefix(e.target.value)}
-                placeholder="可选"
+                placeholder="账号前缀为4位小写字母，无则留空"
                 className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]"
               />
             </div>
           </div>
         </div>
+
         <SheetFooter className="flex-row justify-end gap-2 border-t border-[#e9ebec] px-4 py-3">
           <Button
             variant="outline"

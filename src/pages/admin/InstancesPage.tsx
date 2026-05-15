@@ -134,7 +134,7 @@ export default function InstancesPage() {
         <Table className="text-sm">
           <TableHeader className="[&_tr]:border-b [&_tr]:border-[#e9ebec]">
             <TableRow className="border-0 hover:bg-transparent">
-              <TableHead className="h-10 rounded-tl-lg bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">
+              <TableHead className="h-10 sticky left-0 z-20 rounded-tl-lg bg-[#f2f3f4] px-4 text-xs font-semibold text-[#323232]">
                 企业名称
               </TableHead>
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">
@@ -155,7 +155,7 @@ export default function InstancesPage() {
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">
                 绑定套餐
               </TableHead>
-              <TableHead className="h-10 rounded-tr-lg bg-[rgba(233,235,236,0.4)] px-4 text-right text-xs font-semibold text-[#323232]">
+              <TableHead className="h-10 sticky right-0 z-20 rounded-tr-lg bg-[#f2f3f4] px-4 text-right text-xs font-semibold text-[#323232]">
                 <span className="inline-flex w-full items-center justify-end gap-1">
                   操作
                   <Settings2 className="size-3.5 text-[#969696]" aria-hidden />
@@ -172,11 +172,11 @@ export default function InstancesPage() {
                 <TableRow
                   key={r.name}
                   className={cn(
-                    'border-b border-[#e9ebec] hover:bg-[rgba(233,235,236,0.12)] last:border-b-0',
+                    'group border-b border-[#e9ebec] hover:bg-[rgba(233,235,236,0.12)] last:border-b-0',
                     striped && 'bg-[rgba(233,235,236,0.2)]'
                   )}
                 >
-                  <TableCell className="px-4 py-3 text-[14px] leading-[22px] text-[#323232]">
+                  <TableCell className={cn("px-4 py-3 text-[14px] leading-[22px] text-[#323232] sticky left-0 z-10 bg-white group-hover:bg-[#fbfbfc]", striped && "bg-[#f8f9f9]")}>
                     {r.company}
                   </TableCell>
                   <TableCell className="px-4 py-3 text-[14px] leading-[22px]">
@@ -223,22 +223,24 @@ export default function InstancesPage() {
                       <span className="text-[#969696]">—</span>
                     )}
                   </TableCell>
-                  <TableCell className="px-4 py-3 text-right">
+                  <TableCell className={cn("px-4 py-3 text-right sticky right-0 z-10 bg-white group-hover:bg-[#fbfbfc]", striped && "bg-[#f8f9f9]")}>
                     <div className="flex justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setEditTarget(r.name)}
-                        className="inline-flex h-6 min-w-[48px] items-center justify-center rounded-lg border border-[#e9ebec] bg-white px-3 text-xs leading-5 text-[#323232] transition-colors hover:bg-[#f9f9f9] cursor-pointer"
-                      >
-                        编辑
-                      </button>
                       {configured ? (
-                        <Link
-                          to={`/admin/instances/detail?name=${encodeURIComponent(r.name)}`}
-                          className="inline-flex h-6 min-w-[48px] items-center justify-center rounded-lg border border-[#e9ebec] bg-white px-3 text-xs leading-5 text-[#323232] transition-colors hover:bg-[#f9f9f9]"
-                        >
-                          详情
-                        </Link>
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setEditTarget(r.name)}
+                            className="inline-flex h-6 min-w-[48px] items-center justify-center rounded-lg border border-[#e9ebec] bg-white px-3 text-xs leading-5 text-[#323232] transition-colors hover:bg-[#f9f9f9] cursor-pointer"
+                          >
+                            编辑
+                          </button>
+                          <Link
+                            to={`/admin/instances/detail?name=${encodeURIComponent(r.name)}`}
+                            className="inline-flex h-6 min-w-[48px] items-center justify-center rounded-lg border border-[#e9ebec] bg-white px-3 text-xs leading-5 text-[#323232] transition-colors hover:bg-[#f9f9f9]"
+                          >
+                            详情
+                          </Link>
+                        </>
                       ) : (
                         <button
                           type="button"

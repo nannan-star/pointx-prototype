@@ -7,11 +7,17 @@ import {
   Eye,
   EyeOff,
   MoreHorizontal,
+  X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import {
   Select,
   SelectContent,
@@ -32,6 +38,8 @@ import {
   type BoundPackageDetail,
 } from '@/data/instance-mock'
 import { cn } from '@/lib/utils'
+
+const availablePackages = ['全球定位增强标准包', '星基融合旗舰包', '地基差分增强包']
 
 
 function maskSecret(value: string): string {
@@ -68,6 +76,11 @@ export default function InstanceDetailPage() {
   const [copiedHint, setCopiedHint] = useState<string | null>(null)
   const [showSk, setShowSk] = useState(false)
   const [showSis, setShowSis] = useState(false)
+  const [editSelectedPkgs, setEditSelectedPkgs] = useState<string[]>([])
+  const [editAutoStock, setEditAutoStock] = useState('是')
+  const [editActivateMode, setEditActivateMode] = useState('')
+  const [editAccountPrefix, setEditAccountPrefix] = useState('')
+  const [editPkgPopoverOpen, setEditPkgPopoverOpen] = useState(false)
 
   const boundList = useMemo(
     () => boundPackagesByInstance[inst?.name ?? ''] ?? [],
@@ -144,6 +157,10 @@ export default function InstanceDetailPage() {
         旗舰
       </span>
     )
+  }
+
+  function removeEditPkg(pkg: string) {
+    setEditSelectedPkgs((prev) => prev.filter((p) => p !== pkg))
   }
 
   return (
@@ -504,38 +521,91 @@ export default function InstanceDetailPage() {
           </div>
         </div>
 
+
       <Sheet open={editOpen} onOpenChange={setEditOpen}>
-        <SheetContent className="sm:max-w-[400px] overflow-y-auto p-0">
-          <SheetHeader className="border-b border-[#e9ebec] p-4 pb-3">
-            <SheetTitle className="text-sm font-semibold text-[#323232]">编辑实例 · {inst.name}</SheetTitle>
+        <SheetContent className="sm:max-w-[400px] overflow-y-auto p-0 flex flex-col">
+          <SheetHeader className="border-b border-[#e9ebec] px-4 py-4 pb-3">
+            <SheetTitle className="text-sm font-semibold text-[#323232]">配置实例</SheetTitle>
           </SheetHeader>
+
           <div className="flex-1 overflow-y-auto px-4 py-4">
             <div className="flex flex-col gap-[18px]">
-              <div className="flex flex-col gap-1">
-                <Label className="text-sm font-normal text-[#646464]">企业名称</Label>
-                <Input value={inst.company} readOnly className="h-8 rounded-lg border-[#e9ebec] bg-[#f7f8f9] text-sm" />
+              {/* 企业名称 & 实例名称 */}
+              <div className="rounded-lg border border-[#e9ebec] overflow-hidden">
+                <div className="flex items-center h-9 border-b border-[#e9ebec]">
+                  <span className="bg-[#e9ebec]/40 w-[88px] shrink-0 h-full flex items-center justify-center text-sm text-[#323232]">
+                    企业名称
+                  </span>
+                  <span className="px-3 text-sm font-semibold text-[#323232] truncate">
+                    {inst.company}
+                  </span>
+                </div>
+                <div className="flex items-center h-9">
+                  <span className="bg-[#e9ebec]/40 w-[88px] shrink-0 h-full flex items-center justify-center text-sm text-[#323232]">
+                    实例名称
+                  </span>
+                  <span className="px-3 text-sm font-semibold text-[#323232] truncate">
+                    {inst.name}
+                  </span>
+                </div>
               </div>
+
+              {/* SDK 服务套餐 */}
               <div className="flex flex-col gap-1">
-                <Label className="text-sm font-normal text-[#646464]">实例名称</Label>
-                <Input value={inst.name} readOnly className="h-8 rounded-lg border-[#e9ebec] bg-[#f7f8f9] text-sm" />
-              </div>
-              <div className="flex flex-col gap-1">
-                <Label className="text-sm font-normal text-[#646464]">SDK 服务套餐</Label>
-                <Select defaultValue={inst.packageNames[0] || '__none__'}>
-                  <SelectTrigger className="h-8 w-full rounded-lg border-[#e9ebec] bg-white text-sm text-[#323232]">
-                    <SelectValue placeholder="选择套餐" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {inst.packageNames.map((n) => (
-                      <SelectItem key={n} value={n}>{n}</SelectItem>
+                <label className="text-sm font-normal text-[#646464]">
+                  <span className="text-[#eb2e2e]">*</span> SDK 服务套餐
+                </label>
+                <Popover open={editPkgPopoverOpen} onOpenChange={setEditPkgPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <div className="relative flex items-center min-h-[32px] w-full cursor-pointer rounded-lg border border-[#e9ebec] bg-white px-2 py-1 gap-1 flex-wrap">
+                      {editSelectedPkgs.length === 0 && (
+                        <span className="text-sm text-[#969696]">请选择</span>
+                      )}
+                      {editSelectedPkgs.map((pkg) => (
+                        <span
+                          key={pkg}
+                          className="inline-flex items-center gap-1 rounded-md bg-[#fff3e5] px-2 py-0.5 text-xs text-[#ff7f32] whitespace-nowrap"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {pkg}
+                          <button
+                            type="button"
+                            className="inline-flex items-center justify-center text-[#ff7f32] hover:text-[#e06520]"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              removeEditPkg(pkg)
+                            }}
+                          >
+                            <X className="size-3" />
+                          </button>
+                        </span>
+                      ))}
+                      <ChevronDown className="ml-auto size-4 shrink-0 text-[#969696]" />
+                    </div>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-2" align="start">
+                    {availablePackages.map((pkg) => (
+                      <label
+                        key={pkg}
+                        className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-[#f5f5f5] cursor-pointer"
+                      >
+                        <Checkbox
+                          checked={editSelectedPkgs.includes(pkg)}
+                          onCheckedChange={() => toggleEditPkg(pkg)}
+                        />
+                        <span className="text-sm text-[#323232]">{pkg}</span>
+                      </label>
                     ))}
-                    <SelectItem value="__none__">-- 不绑定 --</SelectItem>
-                  </SelectContent>
-                </Select>
+                  </PopoverContent>
+                </Popover>
               </div>
+
+              {/* 设备自动入库 */}
               <div className="flex flex-col gap-1">
-                <Label className="text-sm font-normal text-[#646464]">设备自动入库</Label>
-                <Select defaultValue={inst.deviceAutoStock}>
+                <label className="text-sm font-normal text-[#646464]">
+                  <span className="text-[#eb2e2e]">*</span> 设备自动入库
+                </label>
+                <Select value={editAutoStock} onValueChange={setEditAutoStock}>
                   <SelectTrigger className="h-8 w-full rounded-lg border-[#e9ebec] bg-white text-sm text-[#323232]">
                     <SelectValue />
                   </SelectTrigger>
@@ -545,12 +615,37 @@ export default function InstanceDetailPage() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* 激活方式 */}
               <div className="flex flex-col gap-1">
-                <Label className="text-sm font-normal text-[#646464]">激活方式</Label>
-                <Input defaultValue={inst.activateMode} className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm" />
+                <label className="text-sm font-normal text-[#646464]">
+                  <span className="text-[#eb2e2e]">*</span> 激活方式
+                </label>
+                <Select value={editActivateMode} onValueChange={setEditActivateMode}>
+                  <SelectTrigger className="h-8 w-full rounded-lg border-[#e9ebec] bg-white text-sm text-[#323232]">
+                    <SelectValue placeholder="请选择" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="设备SN绑定">设备SN绑定</SelectItem>
+                    <SelectItem value="手动激活">手动激活</SelectItem>
+                    <SelectItem value="在线激活">在线激活</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 账号前缀 */}
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-normal text-[#646464]">账号前缀</label>
+                <Input
+                  value={editAccountPrefix}
+                  onChange={(e) => setEditAccountPrefix(e.target.value)}
+                  placeholder="账号前缀为4位小写字母，无则留空"
+                  className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]"
+                />
               </div>
             </div>
           </div>
+
           <SheetFooter className="flex-row justify-end gap-2 border-t border-[#e9ebec] px-4 py-3">
             <Button
               variant="outline"

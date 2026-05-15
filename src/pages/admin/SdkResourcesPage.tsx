@@ -1,23 +1,13 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Plus, Settings2, Eye, EyeOff, Zap } from 'lucide-react'
+import { Settings2, Eye, EyeOff, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from '@/components/ui/dialog'
 import {
   Select,
   SelectContent,
@@ -25,12 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
 import { StatusBadge } from '@/components/StatusBadge'
 import { SdkResourceDetailDrawer } from '@/components/SdkResourceDetailDrawer'
 import { SdkOpenAccountDrawer } from '@/components/SdkOpenAccountDrawer'
@@ -79,13 +63,6 @@ const FILTER_FIELDS_ADMIN = [
 const FILTER_FIELDS_CLIENT = FILTER_FIELDS_ADMIN.filter(
   (f) => f.key !== 'company' && f.key !== 'instance'
 )
-
-const BATCH_ACTIVATE_TOOLTIP_LINES = [
-  '批量激活：对已勾选且「激活状态 ≠ 已激活」的资源统一发起激活。',
-  '1) 先在左侧勾选复选框；',
-  '2) 点「批量操作」→「批量激活」；',
-  '3) 确认后一次性提交（演示环境不调用真实接口）。',
-]
 
 /* ---- Filter helpers ---- */
 
@@ -141,7 +118,6 @@ export default function SdkResourcesPage({ isClientView = false }: SdkResourcesP
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [batchActivateConfirmOpen, setBatchActivateConfirmOpen] = useState(false)
-  const [batchMenuOpen, setBatchMenuOpen] = useState(false)
 
   const hasActiveFilters = useMemo(() => {
     return filterFields.some((f) => {
@@ -175,20 +151,16 @@ export default function SdkResourcesPage({ isClientView = false }: SdkResourcesP
     [filtered, safePage, pageSize]
   )
 
-  const activatableSelectedCount = useMemo(() => {
-    let n = 0
+  const activatableSelected = useMemo(() => {
+    const items: SdkResource[] = []
     for (const k of selectedKeys) {
       const row = sdkResources.find((r) => r.sdkResKey === k)
-      if (row && row.activateStatus !== '已激活') n += 1
+      if (row && row.activateStatus !== '已激活') items.push(row)
     }
-    return n
+    return items
   }, [selectedKeys])
 
-  const openBatchActivateConfirm = () => {
-    if (activatableSelectedCount === 0) return
-    setBatchMenuOpen(false)
-    window.setTimeout(() => setBatchActivateConfirmOpen(true), 0)
-  }
+  const activatableSelectedCount = activatableSelected.length
 
   const runBatchActivateDemo = () => {
     setBatchActivateConfirmOpen(false)
@@ -251,97 +223,28 @@ export default function SdkResourcesPage({ isClientView = false }: SdkResourcesP
           setAppliedFilters({})
         }}
         actions={
-          <TooltipProvider delayDuration={150} skipDelayDuration={100}>
-            <DropdownMenu open={batchMenuOpen} onOpenChange={setBatchMenuOpen} modal={false}>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={selectedKeys.size === 0}
-                  className="h-9 min-h-9 cursor-pointer rounded-lg border-[#e9ebec] bg-white px-3 text-sm font-normal text-[#323232] hover:bg-[#f9f9f9] focus-visible:border-[#ff7f32] focus-visible:ring-[3px] focus-visible:ring-[#ff7f32]/25 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none"
-                >
-                  批量操作
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                side="bottom"
-                sideOffset={6}
-                collisionPadding={16}
-                className={cn(
-                  'z-[100] w-56 min-w-[14rem] max-h-[min(22rem,85dvh)] overflow-y-auto border-[#e9ebec] p-0 shadow-[0_8px_24px_-4px_rgba(0,0,0,0.12)]'
-                )}
-                onCloseAutoFocus={(e) => e.preventDefault()}
-              >
-                <div className="p-1">
-                  <DropdownMenuItem
-                    className="cursor-pointer rounded-md text-[#323232] focus:bg-[#f9f9f9]"
-                    onClick={() => {
-                      setBatchMenuOpen(false)
-                      alert('导出选中（演示）')
-                    }}
-                  >
-                    导出选中
-                  </DropdownMenuItem>
-                </div>
-                <DropdownMenuSeparator className="m-0 bg-[#e9ebec]" />
-                <div className="min-h-[3.25rem] bg-[#f9f9f9] p-2">
-                  <div className="flex items-stretch gap-1.5">
-                    <DropdownMenuItem
-                      disabled={activatableSelectedCount === 0}
-                      onSelect={(e) => {
-                        e.preventDefault()
-                        openBatchActivateConfirm()
-                      }}
-                      className={cn(
-                        'flex min-h-9 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-2 text-xs font-normal outline-none select-none',
-                        'border-[#ffcda8] bg-[#fff8f3] text-[#d45a00] hover:bg-[#fff0e6] hover:text-[#b84a00]',
-                        'focus:bg-[#fff0e6] focus:text-[#b84a00] data-[highlighted]:bg-[#fff0e6] data-[highlighted]:text-[#b84a00]',
-                        'data-[disabled]:cursor-not-allowed data-[disabled]:border-[#e9ebec] data-[disabled]:bg-white data-[disabled]:text-[#969696] data-[disabled]:opacity-100'
-                      )}
-                      aria-label={
-                        activatableSelectedCount > 0
-                          ? `批量激活，已选 ${activatableSelectedCount} 条可激活资源`
-                          : '批量激活（请先勾选未激活资源）'
-                      }
-                    >
-                      <Zap className="size-3.5 shrink-0" strokeWidth={2} aria-hidden />
-                      <span className="truncate">批量激活</span>
-                      {selectedKeys.size > 0 && (
-                        <span className="ml-0.5 shrink-0 rounded bg-[#ff7f32]/15 px-1 py-0.5 text-[10px] font-medium text-[#ff7f32] tabular-nums">
-                          {activatableSelectedCount}/{selectedKeys.size}
-                        </span>
-                      )}
-                    </DropdownMenuItem>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          className={cn(
-                            'inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-md border text-sm font-semibold leading-none outline-none transition-colors motion-reduce:transition-none',
-                            'border-[#e9ebec] bg-white text-[#969696] hover:border-[#ffcda8] hover:bg-[#fff8f3] hover:text-[#ff7f32]',
-                            'focus-visible:border-[#ff7f32] focus-visible:ring-[3px] focus-visible:ring-[#ff7f32]/25'
-                          )}
-                          aria-label="查看批量激活说明"
-                          onPointerDown={(e) => e.stopPropagation()}
-                        >
-                          <span aria-hidden className="select-none">?</span>
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="left" align="center" className="w-[min(280px,calc(100vw-2rem))]">
-                        <div className="space-y-1.5 text-left">
-                          {BATCH_ACTIVATE_TOOLTIP_LINES.map((line, i) => (
-                            <p key={line} className={i === 0 ? 'text-[#323232]' : 'text-[#969696]'}>
-                              {line}
-                            </p>
-                          ))}
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={selectedKeys.size === 0}
+              onClick={() => {
+                if (activatableSelectedCount === 0) {
+                  alert('所选资源均已激活，无需重复操作')
+                  return
+                }
+                setBatchActivateConfirmOpen(true)
+              }}
+              className="h-9 min-h-9 cursor-pointer gap-1.5 rounded-lg border-[#e9ebec] bg-white px-3 text-sm font-normal text-[#323232] hover:bg-[#f9f9f9] focus-visible:border-[#ff7f32] focus-visible:ring-[3px] focus-visible:ring-[#ff7f32]/25 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none"
+            >
+              <Zap className="size-3.5 text-[#ff7f32]" strokeWidth={2} />
+              批量激活
+              {selectedKeys.size > 0 && (
+                <span className="rounded bg-[#ff7f32]/15 px-1 py-0.5 text-[11px] font-medium text-[#ff7f32] tabular-nums">
+                  {activatableSelectedCount}/{selectedKeys.size}
+                </span>
+              )}
+            </Button>
             <Button
               type="button"
               onClick={() => setOpenAccountOpen(true)}
@@ -349,43 +252,68 @@ export default function SdkResourcesPage({ isClientView = false }: SdkResourcesP
             >
               开通账号
             </Button>
-          </TooltipProvider>
+          </>
         }
       />
 
-      <AlertDialog open={batchActivateConfirmOpen} onOpenChange={setBatchActivateConfirmOpen}>
-        <AlertDialogContent className="border-[#e9ebec] bg-white text-[#323232] sm:max-w-md">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-[#323232]">确认批量激活</AlertDialogTitle>
-            <AlertDialogDescription className="text-[#646464]">
-              将为当前勾选中 <span className="font-semibold text-[#323232] tabular-nums">{activatableSelectedCount}</span>{' '}
-              条<strong className="font-medium text-[#323232]">未激活</strong>资源发起批量激活（演示环境不调用真实接口）。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2 sm:gap-2">
-            <AlertDialogCancel className="cursor-pointer border-[#e9ebec] bg-white text-[#323232] hover:bg-[#f9f9f9]">
+      <Dialog open={batchActivateConfirmOpen} onOpenChange={setBatchActivateConfirmOpen}>
+        <DialogContent className="border-[#e9ebec] bg-white text-[#323232] sm:max-w-lg p-0">
+          <DialogHeader className="border-b border-[#e9ebec] px-6 py-4">
+            <DialogTitle className="text-sm font-semibold text-[#323232]">批量激活</DialogTitle>
+            <DialogDescription className="text-sm text-[#646464]">
+              将为以下 <span className="font-semibold text-[#323232] tabular-nums">{activatableSelectedCount}</span> 条未激活资源发起批量激活。
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[320px] overflow-y-auto px-6 py-3">
+            <Table className="text-sm">
+              <TableHeader>
+                <TableRow className="border-b border-[#e9ebec] hover:bg-transparent">
+                  <TableHead className="h-9 bg-[rgba(233,235,236,0.4)] text-xs font-semibold text-[#323232]">设备 ID/SN</TableHead>
+                  <TableHead className="h-9 bg-[rgba(233,235,236,0.4)] text-xs font-semibold text-[#323232]">设备类型</TableHead>
+                  {!isClientView && <TableHead className="h-9 bg-[rgba(233,235,236,0.4)] text-xs font-semibold text-[#323232]">企业名称</TableHead>}
+                  <TableHead className="h-9 bg-[rgba(233,235,236,0.4)] text-xs font-semibold text-[#323232]">激活状态</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {activatableSelected.map((r) => (
+                  <TableRow key={r.sdkResKey} className="border-b border-[#e9ebec] last:border-b-0 hover:bg-transparent">
+                    <TableCell className="py-2.5 text-sm text-[#323232]">{r.sn}</TableCell>
+                    <TableCell className="py-2.5 text-sm text-[#323232]">{r.deviceType}</TableCell>
+                    {!isClientView && <TableCell className="py-2.5 text-sm text-[#323232]">{r.company}</TableCell>}
+                    <TableCell className="py-2.5"><StatusBadge status={r.activateStatus} variant="activate" /></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <DialogFooter className="flex-row justify-end gap-2 border-t border-[#e9ebec] px-6 py-3">
+            <Button
+              variant="outline"
+              onClick={() => setBatchActivateConfirmOpen(false)}
+              className="h-8 rounded-lg border border-[#f9f9f9] bg-[#e9ebec] px-3 text-sm text-[#323232] hover:bg-[#dcdfe1]"
+            >
               取消
-            </AlertDialogCancel>
-            <AlertDialogAction
+            </Button>
+            <Button
               onClick={runBatchActivateDemo}
-              className="cursor-pointer border border-[#ffa05c] bg-[#ff7f32] text-white hover:bg-[#ff6a14] focus-visible:ring-[#ff7f32]/40"
+              className="h-8 rounded-lg border border-[#ffa05c] bg-[#ff7f32] px-3 text-sm text-[#f9f9f9] hover:bg-[#e8722d]"
             >
               确认激活
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="overflow-hidden rounded-lg border border-[#e9ebec] bg-white shadow-[2px_2px_8px_-2px_rgba(0,0,0,0.05)]">
         <Table className="text-sm">
           <TableHeader className="[&_tr]:border-b [&_tr]:border-[#e9ebec]">
             <TableRow className="border-0 hover:bg-transparent">
-              <TableHead className="w-10 h-10 rounded-tl-lg bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">
+              <TableHead className="w-[52px] min-w-[52px] h-10 sticky left-0 z-20 rounded-tl-lg bg-[#f2f3f4] px-3 text-xs font-semibold text-[#323232]">
                 <Checkbox checked={allSelected} onCheckedChange={toggleAll} aria-label="全选" />
               </TableHead>
-              {!isClientView && <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">企业名称</TableHead>}
+              {!isClientView && <TableHead className="h-10 sticky left-[52px] z-20 bg-[#f2f3f4] px-4 text-xs font-semibold text-[#323232]">企业名称</TableHead>}
               {!isClientView && <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">实例名称</TableHead>}
-              <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">设备 ID/SN</TableHead>
+              <TableHead className={cn("h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]", isClientView && "sticky left-[52px] z-20 bg-[#f2f3f4]")}>设备 ID/SN</TableHead>
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">设备类型</TableHead>
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">激活状态</TableHead>
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">服务状态</TableHead>
@@ -396,7 +324,7 @@ export default function SdkResourcesPage({ isClientView = false }: SdkResourcesP
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">注册码</TableHead>
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">激活方式</TableHead>
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">入库方式</TableHead>
-              <TableHead className="h-10 rounded-tr-lg bg-[rgba(233,235,236,0.4)] px-4 text-right text-xs font-semibold text-[#323232]">
+              <TableHead className="h-10 sticky right-0 z-20 rounded-tr-lg bg-[#f2f3f4] px-4 text-right text-xs font-semibold text-[#323232]">
                 <span className="inline-flex w-full items-center justify-end gap-1">
                   操作
                   <Settings2 className="size-3.5 text-[#969696]" aria-hidden />
@@ -513,15 +441,15 @@ function SdkResourceRow({
 
   return (
     <TableRow className={cn(
-      'border-b border-[#e9ebec] hover:bg-[rgba(233,235,236,0.12)] last:border-b-0',
+      'group border-b border-[#e9ebec] hover:bg-[rgba(233,235,236,0.12)] last:border-b-0',
       striped && 'bg-[rgba(233,235,236,0.2)]'
     )}>
-      <TableCell className="px-4 py-3">
+      <TableCell className={cn("w-[52px] min-w-[52px] px-3 py-3 sticky left-0 z-10 bg-white group-hover:bg-[#fbfbfc]", striped && "bg-[#f8f9f9]")}>
         <Checkbox checked={selected} onCheckedChange={onToggle} aria-label={`选择 ${r.sn}`} />
       </TableCell>
-      {!isClientView && <TableCell className="px-4 py-3 text-[14px] leading-[22px] text-[#323232] whitespace-nowrap">{cell(r.company)}</TableCell>}
+      {!isClientView && <TableCell className={cn("px-4 py-3 text-[14px] leading-[22px] text-[#323232] whitespace-nowrap sticky left-[52px] z-10 bg-white group-hover:bg-[#fbfbfc]", striped && "bg-[#f8f9f9]")}>{cell(r.company)}</TableCell>}
       {!isClientView && <TableCell className="px-4 py-3 text-[14px] leading-[22px] text-[#323232]">{cell(r.instance)}</TableCell>}
-      <TableCell className="px-4 py-3 text-[14px] leading-[22px] text-[#323232]">{cell(r.sn)}</TableCell>
+      <TableCell className={cn("px-4 py-3 text-[14px] leading-[22px] text-[#323232]", isClientView && "sticky left-[52px] z-10 bg-white group-hover:bg-[#fbfbfc]", isClientView && striped && "bg-[#f8f9f9]")}>{cell(r.sn)}</TableCell>
       <TableCell className="px-4 py-3 text-[14px] leading-[22px] text-[#323232]">{cell(r.deviceType)}</TableCell>
       <TableCell className="px-4 py-3"><StatusBadge status={r.activateStatus} variant="activate" /></TableCell>
       <TableCell className="px-4 py-3"><StatusBadge status={r.status} variant="service" /></TableCell>
@@ -546,7 +474,7 @@ function SdkResourceRow({
       </TableCell>
       <TableCell className="px-4 py-3 text-[14px] leading-[22px] text-[#323232]">{cell(r.activateMode)}</TableCell>
       <TableCell className="px-4 py-3 text-[14px] leading-[22px] text-[#323232]">{cell(r.entryMode)}</TableCell>
-      <TableCell className="px-4 py-3 text-right">
+      <TableCell className={cn("px-4 py-3 text-right sticky right-0 z-10 bg-white group-hover:bg-[#fbfbfc]", striped && "bg-[#f8f9f9]")}>
         <div className="flex justify-end gap-2">
           <button
             type="button"

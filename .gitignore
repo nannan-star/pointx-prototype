@@ -29,6 +29,9 @@ pnpm-debug.log*
 coverage/
 .nyc_output/
 
+# Claude Code
+.claude/settings.json
+
 # Editor & OS
 .DS_Store
 Thumbs.db

@@ -200,19 +200,19 @@ function RightPanel({ company }: { company: CompanyGroup }) {
           <table className="w-full text-sm">
             <thead className="sticky top-0 z-10">
               <tr className="bg-[#f5f7f9]">
-                <th className="h-10 px-3 text-left text-[13px] font-semibold text-[#666]">商品名称</th>
-                <th className="h-10 w-[104px] px-3 text-left text-[13px] font-semibold text-[#666]">商品规格</th>
+                <th className="h-10 max-w-[200px] px-3 text-left text-[13px] font-semibold text-[#666]">商品名称</th>
+                <th className="h-10 w-[140px] px-3 text-left text-[13px] font-semibold text-[#666]">商品规格</th>
                 <th className="h-10 w-[92px] px-3 text-left text-[12px] font-semibold text-[#666]">是否默认规格</th>
                 <th className="h-10 w-[113px] px-3 text-right text-[12px] font-semibold text-[#666]">总数量</th>
                 <th className="h-10 w-[113px] px-3 text-right text-[12px] font-semibold text-[#666]">已使用</th>
                 <th className="h-10 w-[114px] px-3 text-right text-[12px] font-semibold text-[#666]">未使用</th>
-                <th className="h-10 w-[76px] px-3 text-center text-[13px] font-semibold text-[#666]">操作</th>
+                <th className="h-10 w-[100px] px-3 text-center text-[13px] font-semibold text-[#666]">操作</th>
               </tr>
             </thead>
             <tbody>
               {company.lines.map((l, i) => (
                 <tr key={i} className="border-b border-[#e9ebec] last:border-b-0 hover:bg-[#fafafa]">
-                  <td className="h-14 px-3 text-[13px] font-medium text-[#323232]">{l.product}</td>
+                  <td className="h-14 max-w-[200px] px-3 text-[13px] font-medium text-[#323232]"><span className="block truncate">{l.product}</span></td>
                   <td className="h-14 px-3">
                     <span className="inline-flex items-center rounded border border-[#dce2e8] bg-[#eef1f5] px-2 py-0.5 text-xs text-[#666]">
                       {l.spec}

@@ -213,34 +213,37 @@ export default function DictManagementPage() {
       </div>
 
       <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>{editItem ? '编辑字典' : '新增字典'}</SheetTitle>
+        <SheetContent className="sm:max-w-[400px] overflow-y-auto p-0">
+          <SheetHeader className="border-b border-[#e9ebec] p-4 pb-3">
+            <SheetTitle className="text-sm font-semibold text-[#323232]">{editItem ? '编辑字典' : '新增字典'}</SheetTitle>
           </SheetHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>枚举类型 *</Label>
-              <Input value={form.enumType} onChange={e => setForm(f => ({ ...f, enumType: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label>主键</Label>
-              <Input type="number" value={form.pk} onChange={e => setForm(f => ({ ...f, pk: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label>值 *</Label>
-              <Input value={form.value} onChange={e => setForm(f => ({ ...f, value: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label>排序</Label>
-              <Input type="number" value={form.sort} onChange={e => setForm(f => ({ ...f, sort: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label>描述</Label>
-              <Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+          <div className="flex-1 overflow-y-auto px-4 py-4">
+            <div className="flex flex-col gap-[18px]">
+              <div className="flex flex-col gap-1">
+                <Label className="text-sm font-normal text-[#646464]"><span className="text-[#eb2e2e]">*</span> 枚举类型</Label>
+                <Input className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]" placeholder="请输入枚举类型" value={form.enumType} onChange={e => setForm(f => ({ ...f, enumType: e.target.value }))} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label className="text-sm font-normal text-[#646464]">主键</Label>
+                <Input className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]" type="number" placeholder="请输入主键" value={form.pk} onChange={e => setForm(f => ({ ...f, pk: e.target.value }))} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label className="text-sm font-normal text-[#646464]"><span className="text-[#eb2e2e]">*</span> 值</Label>
+                <Input className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]" placeholder="请输入值" value={form.value} onChange={e => setForm(f => ({ ...f, value: e.target.value }))} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label className="text-sm font-normal text-[#646464]">排序</Label>
+                <Input className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]" type="number" placeholder="请输入排序" value={form.sort} onChange={e => setForm(f => ({ ...f, sort: e.target.value }))} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label className="text-sm font-normal text-[#646464]">描述</Label>
+                <Input className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]" placeholder="请输入描述" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+              </div>
             </div>
           </div>
-          <SheetFooter>
-            <Button onClick={handleSave}>保存</Button>
+          <SheetFooter className="flex-row justify-end gap-2 border-t border-[#e9ebec] px-4 py-3">
+            <Button type="button" className="h-8 rounded-lg border border-[#f9f9f9] bg-[#e9ebec] px-3 text-sm text-[#323232] hover:bg-[#dcdfe1]" onClick={() => setDrawerOpen(false)}>取消</Button>
+            <Button type="button" className="h-8 rounded-lg border border-[#ffa05c] bg-[#ff7f32] px-3 text-sm text-[#f9f9f9] hover:bg-[#e8722d]" onClick={handleSave}>保存</Button>
           </SheetFooter>
         </SheetContent>
       </Sheet>

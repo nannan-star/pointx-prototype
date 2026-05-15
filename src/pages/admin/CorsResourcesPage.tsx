@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select'
 import { StatusBadge } from '@/components/StatusBadge'
 import { CorsDetailDrawer } from '@/components/CorsDetailDrawer'
+import { CorsEditDrawer } from '@/components/CorsEditDrawer'
 import { CorsOpenAccountDrawer } from '@/components/CorsOpenAccountDrawer'
 import { SearchFilterBar, type FilterValue, type DateRange } from '@/components/SearchFilterBar'
 import { corsResources, type CorsResource } from '@/data/resource-mock'
@@ -93,6 +94,7 @@ export default function CorsResourcesPage({ isClientView = false }: CorsResource
   const [appliedFilters, setAppliedFilters] = useState<Record<string, FilterValue>>({})
 
   const [detailAccount, setDetailAccount] = useState<string | null>(null)
+  const [editAccount, setEditAccount] = useState<string | null>(null)
   const [openAccountOpen, setOpenAccountOpen] = useState(false)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -137,6 +139,7 @@ export default function CorsResourcesPage({ isClientView = false }: CorsResource
     : 'CORS 外置账号资源明细；本页可开通 CORS 账号，并查看账号消耗情况。'
 
   const detailRow = detailAccount ? corsResources.find((r) => r.account === detailAccount) : undefined
+  const editRow = editAccount ? corsResources.find((r) => r.account === editAccount) : undefined
   const colCount = isClientView ? 9 : 10
 
   return (
@@ -174,8 +177,8 @@ export default function CorsResourcesPage({ isClientView = false }: CorsResource
         <Table className="text-sm">
           <TableHeader className="[&_tr]:border-b [&_tr]:border-[#e9ebec]">
             <TableRow className="border-0 hover:bg-transparent">
-              {!isClientView && <TableHead className="h-10 rounded-tl-lg bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">企业名称</TableHead>}
-              {isClientView && <TableHead className="h-10 rounded-tl-lg bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">账号名</TableHead>}
+              {!isClientView && <TableHead className="h-10 sticky left-0 z-20 rounded-tl-lg bg-[#f2f3f4] px-4 text-xs font-semibold text-[#323232]">企业名称</TableHead>}
+              {isClientView && <TableHead className="h-10 sticky left-0 z-20 rounded-tl-lg bg-[#f2f3f4] px-4 text-xs font-semibold text-[#323232]">账号名</TableHead>}
               {!isClientView && <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">账号名</TableHead>}
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">密码</TableHead>
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">状态</TableHead>
@@ -184,7 +187,7 @@ export default function CorsResourcesPage({ isClientView = false }: CorsResource
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">到期时间</TableHead>
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">剩余时间</TableHead>
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">商品</TableHead>
-              <TableHead className="h-10 rounded-tr-lg bg-[rgba(233,235,236,0.4)] px-4 text-right text-xs font-semibold text-[#323232]">
+              <TableHead className="h-10 sticky right-0 z-20 rounded-tr-lg bg-[#f2f3f4] px-4 text-right text-xs font-semibold text-[#323232]">
                 <span className="inline-flex w-full items-center justify-end gap-1">
                   操作
                   <Settings2 className="size-3.5 text-[#969696]" aria-hidden />
@@ -208,6 +211,7 @@ export default function CorsResourcesPage({ isClientView = false }: CorsResource
                     key={r.account}
                     resource={r}
                     isClientView={isClientView}
+                    onEdit={() => setEditAccount(r.account)}
                     onDetail={() => setDetailAccount(r.account)}
                     striped={striped}
                   />
@@ -261,6 +265,15 @@ export default function CorsResourcesPage({ isClientView = false }: CorsResource
         resource={detailRow}
       />
 
+      <CorsEditDrawer
+        open={!!editAccount}
+        onOpenChange={(open) => { if (!open) setEditAccount(null) }}
+        resource={editRow}
+        onSave={(account, remark) => {
+          alert(`已保存账号「${account}」备注：${remark || '（空）'}（演示）`)
+        }}
+      />
+
       <CorsOpenAccountDrawer
         open={openAccountOpen}
         onOpenChange={setOpenAccountOpen}
@@ -273,21 +286,22 @@ export default function CorsResourcesPage({ isClientView = false }: CorsResource
 interface CorsRowProps {
   resource: CorsResource
   isClientView: boolean
+  onEdit: () => void
   onDetail: () => void
   striped: boolean
 }
 
-function CorsRow({ resource: r, isClientView, onDetail, striped }: CorsRowProps) {
+function CorsRow({ resource: r, isClientView, onEdit, onDetail, striped }: CorsRowProps) {
   const cell = (v: string) => v?.trim() || '—'
   const stNorm = r.status?.trim() || ''
 
   return (
     <TableRow className={cn(
-      'border-b border-[#e9ebec] hover:bg-[rgba(233,235,236,0.12)] last:border-b-0',
+      'group border-b border-[#e9ebec] hover:bg-[rgba(233,235,236,0.12)] last:border-b-0',
       striped && 'bg-[rgba(233,235,236,0.2)]'
     )}>
-      {!isClientView && <TableCell className="px-4 py-3 text-[14px] leading-[22px] text-[#323232] whitespace-nowrap">{cell(r.company)}</TableCell>}
-      <TableCell className="px-4 py-3 text-[14px] leading-[22px] text-[#323232]">{cell(r.account)}</TableCell>
+      {!isClientView && <TableCell className={cn("px-4 py-3 text-[14px] leading-[22px] text-[#323232] whitespace-nowrap sticky left-0 z-10 bg-white group-hover:bg-[#fbfbfc]", striped && "bg-[#f8f9f9]")}>{cell(r.company)}</TableCell>}
+      <TableCell className={cn("px-4 py-3 text-[14px] leading-[22px] text-[#323232]", isClientView && "sticky left-0 z-10 bg-white group-hover:bg-[#fbfbfc]", striped && "bg-[#f8f9f9]")}>{cell(r.account)}</TableCell>
       <TableCell className="px-4 py-3 font-mono text-xs text-[#323232]">{cell(r.password)}</TableCell>
       <TableCell className="px-4 py-3"><StatusBadge status={r.status} variant="cors" /></TableCell>
       <TableCell className="px-4 py-3"><StatusBadge status={r.activateStatus} variant="activate" /></TableCell>
@@ -295,12 +309,12 @@ function CorsRow({ resource: r, isClientView, onDetail, striped }: CorsRowProps)
       <TableCell className="px-4 py-3 text-[14px] leading-[22px] text-[#323232]">{cell(r.expireAt)}</TableCell>
       <TableCell className="px-4 py-3 text-[14px] leading-[22px] text-[#323232]">{cell(r.remaining)}</TableCell>
       <TableCell className="px-4 py-3 text-[14px] leading-[22px] text-[#323232]">{cell(r.product)}</TableCell>
-      <TableCell className="px-4 py-3 text-right">
+      <TableCell className={cn("px-4 py-3 text-right sticky right-0 z-10 bg-white group-hover:bg-[#fbfbfc]", striped && "bg-[#f8f9f9]")}>
         <div className="flex justify-end gap-2">
           <button
             type="button"
             className="inline-flex h-6 min-w-[48px] items-center justify-center rounded-lg border border-[#e9ebec] bg-white px-3 text-xs leading-5 text-[#323232] transition-colors hover:bg-[#f9f9f9] cursor-pointer"
-            onClick={() => alert('编辑（演示）')}
+            onClick={onEdit}
           >
             编辑
           </button>

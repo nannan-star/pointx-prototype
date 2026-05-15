@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SearchFilterBar, type FilterValue } from '@/components/SearchFilterBar'
-import { adminUsers, type AdminUser } from '@/data/admin-system-mock'
+import { adminUsers, roles, type AdminUser } from '@/data/admin-system-mock'
 import { cn } from '@/lib/utils'
 
 /* ---- 搜索 / 筛选字段配置 ---- */
@@ -53,7 +53,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>(adminUsers)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editUser, setEditUser] = useState<AdminUser | null>(null)
-  const [form, setForm] = useState({ name: '', phone: '', email: '', remark: '' })
+  const [form, setForm] = useState({ name: '', phone: '', email: '', role: '', remark: '' })
 
   /* applied filter state */
   const [appliedSearchField, setAppliedSearchField] = useState('name')
@@ -95,27 +95,27 @@ export default function AdminUsersPage() {
 
   function handleNew() {
     setEditUser(null)
-    setForm({ name: '', phone: '', email: '', remark: '' })
+    setForm({ name: '', phone: '', email: '', role: '', remark: '' })
     setDrawerOpen(true)
   }
 
   function handleEdit(user: AdminUser) {
     setEditUser(user)
-    setForm({ name: user.name, phone: user.phone, email: user.email, remark: user.remark })
+    setForm({ name: user.name, phone: user.phone, email: user.email, role: user.assignedRoles[0] || '', remark: user.remark })
     setDrawerOpen(true)
   }
 
   function handleSave() {
     if (!form.name.trim()) return
     if (editUser) {
-      setUsers(prev => prev.map(u => u.id === editUser.id ? { ...u, ...form } : u))
+      setUsers(prev => prev.map(u => u.id === editUser.id ? { ...u, ...form, assignedRoles: form.role ? [form.role] : u.assignedRoles } : u))
     } else {
       const newUser: AdminUser = {
         id: `ADM-${Date.now()}`,
         ...form,
         status: '正常',
-        role: '普通管理员',
-        assignedRoles: ['普通管理员'],
+        role: form.role || '普通管理员',
+        assignedRoles: form.role ? [form.role] : ['普通管理员'],
         createdAt: new Date().toLocaleString(),
       }
       setUsers(prev => [...prev, newUser])
@@ -256,30 +256,46 @@ export default function AdminUsersPage() {
       </div>
 
       <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>{editUser ? '编辑用户' : '新增用户'}</SheetTitle>
+        <SheetContent className="sm:max-w-[400px] overflow-y-auto p-0">
+          <SheetHeader className="border-b border-[#e9ebec] p-4 pb-3">
+            <SheetTitle className="text-sm font-semibold text-[#323232]">{editUser ? '编辑用户' : '新增用户'}</SheetTitle>
           </SheetHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>姓名 *</Label>
-              <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label>手机号</Label>
-              <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label>邮箱</Label>
-              <Input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label>备注</Label>
-              <Input value={form.remark} onChange={e => setForm(f => ({ ...f, remark: e.target.value }))} />
+          <div className="flex-1 overflow-y-auto px-4 py-4">
+            <div className="flex flex-col gap-[18px]">
+              <div className="flex flex-col gap-1">
+                <Label className="text-sm font-normal text-[#646464]"><span className="text-[#eb2e2e]">*</span> 姓名</Label>
+                <Input className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]" placeholder="请输入姓名" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label className="text-sm font-normal text-[#646464]">手机号</Label>
+                <Input className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]" placeholder="请输入手机号" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label className="text-sm font-normal text-[#646464]">邮箱</Label>
+                <Input className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]" placeholder="请输入邮箱" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label className="text-sm font-normal text-[#646464]">角色</Label>
+                <Select value={form.role} onValueChange={v => setForm(f => ({ ...f, role: v }))}>
+                  <SelectTrigger className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm text-[#323232]">
+                    <SelectValue placeholder="请选择角色" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map(r => (
+                      <SelectItem key={r.code} value={r.name}>{r.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label className="text-sm font-normal text-[#646464]">备注</Label>
+                <Input className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]" placeholder="请输入备注" value={form.remark} onChange={e => setForm(f => ({ ...f, remark: e.target.value }))} />
+              </div>
             </div>
           </div>
-          <SheetFooter>
-            <Button onClick={handleSave}>保存</Button>
+          <SheetFooter className="flex-row justify-end gap-2 border-t border-[#e9ebec] px-4 py-3">
+            <button type="button" className="h-8 rounded-lg border border-[#f9f9f9] bg-[#e9ebec] px-3 text-sm text-[#323232] hover:bg-[#dcdfe1]" onClick={() => setDrawerOpen(false)}>取消</button>
+            <button type="button" className="h-8 rounded-lg border border-[#ffa05c] bg-[#ff7f32] px-3 text-sm text-[#f9f9f9] hover:bg-[#e8722d]" onClick={handleSave}>保存</button>
           </SheetFooter>
         </SheetContent>
       </Sheet>

@@ -20,7 +20,6 @@ interface OrderResourceDrawerProps {
   order: Order | null
 }
 
-/** 演示用资源 ID 生成（FNV-1a hash） */
 function pseudoResourceId(orderNo: string, rowIdx: number): string {
   let h = 2166136261 >>> 0
   const s = `${orderNo}#${rowIdx}`
@@ -36,7 +35,6 @@ function pseudoResourceId(orderNo: string, rowIdx: number): string {
   return hex.slice(0, 16)
 }
 
-/** 订单资源明细抽屉 */
 export function OrderResourceDrawer({ open, onOpenChange, order }: OrderResourceDrawerProps) {
   if (!order) return null
 
@@ -52,38 +50,38 @@ export function OrderResourceDrawer({ open, onOpenChange, order }: OrderResource
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-lg overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>资源明细</SheetTitle>
-        </SheetHeader>
-        <div className="mt-4 space-y-4">
-          <p className="text-sm text-muted-foreground">
-            订单号 <span className="font-mono text-foreground">{order.no}</span> · 以下为演示资源明细
+      <SheetContent className="sm:max-w-[480px] overflow-y-auto p-0">
+        <SheetHeader className="border-b border-[#e9ebec] px-5 py-4">
+          <SheetTitle className="text-base font-semibold text-[#1a1a1a]">资源明细</SheetTitle>
+          <p className="text-xs text-[#969696] mt-0.5">
+            订单号 <span className="font-mono text-[#323232]">{order.no}</span>
           </p>
-          <div className="border rounded-md">
-            <Table>
+        </SheetHeader>
+        <div className="px-5 py-4 space-y-4">
+          <div className="overflow-hidden rounded-lg border border-[#e9ebec]">
+            <Table className="text-sm [&_tr]:border-[#e9ebec]">
               <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">序号</TableHead>
-                  <TableHead>资源</TableHead>
-                  <TableHead>账号</TableHead>
+                <TableRow className="border-0 hover:bg-transparent">
+                  <TableHead className="h-9 w-14 bg-[#f2f3f4] px-3 text-xs font-semibold text-[#323232]">序号</TableHead>
+                  <TableHead className="h-9 bg-[#f2f3f4] px-3 text-xs font-semibold text-[#323232]">资源</TableHead>
+                  <TableHead className="h-9 bg-[#f2f3f4] px-3 text-xs font-semibold text-[#323232]">账号</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((r) => (
-                  <TableRow key={r.idx}>
-                    <TableCell className="text-muted-foreground">{r.idx}</TableCell>
-                    <TableCell className="font-mono text-xs">{r.rid}</TableCell>
-                    <TableCell>{r.acct || '—'}</TableCell>
+                {rows.map((r, i) => (
+                  <TableRow key={r.idx} className={`border-b border-[#e9ebec] last:border-b-0 ${i % 2 === 1 ? 'bg-[rgba(233,235,236,0.2)]' : ''}`}>
+                    <TableCell className="px-3 py-2.5 text-xs text-[#969696]">{r.idx}</TableCell>
+                    <TableCell className="px-3 py-2.5 font-mono text-xs text-[#323232]">{r.rid}</TableCell>
+                    <TableCell className="px-3 py-2.5 text-sm text-[#323232]">{r.acct || '—'}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </div>
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>共 {n} 条</span>
-            <span>第 1 页 · {n} 条/页</span>
-          </div>
+        </div>
+        <div className="border-t border-[#e9ebec] px-5 py-3 flex items-center justify-between">
+          <span className="text-xs text-[#969696]">共 {n} 条</span>
+          <span className="text-xs text-[#969696]">第 1 页 · {n} 条/页</span>
         </div>
       </SheetContent>
     </Sheet>

@@ -145,12 +145,12 @@ export default function RoleManagementPage() {
         <Table className="text-sm">
           <TableHeader className="[&_tr]:border-b [&_tr]:border-[#e9ebec]">
             <TableRow className="border-0 hover:bg-transparent">
-              <TableHead className="h-10 rounded-tl-lg bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">角色名称</TableHead>
+              <TableHead className="h-10 sticky left-0 z-20 rounded-tl-lg bg-[#f2f3f4] px-4 text-xs font-semibold text-[#323232]">角色名称</TableHead>
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">角色标识</TableHead>
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-right text-xs font-semibold text-[#323232]">显示顺序</TableHead>
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">备注</TableHead>
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">创建时间</TableHead>
-              <TableHead className="h-10 rounded-tr-lg bg-[rgba(233,235,236,0.4)] px-4 text-right text-xs font-semibold text-[#323232]">
+              <TableHead className="h-10 sticky right-0 z-20 rounded-tr-lg bg-[#f2f3f4] px-4 text-right text-xs font-semibold text-[#323232]">
                 <span className="inline-flex w-full items-center justify-end gap-1">
                   操作
                   <Settings2 className="size-3.5 text-[#969696]" aria-hidden />
@@ -168,15 +168,15 @@ export default function RoleManagementPage() {
               const striped = globalIndex % 2 === 1
               return (
                 <TableRow key={r.code} className={cn(
-                  'border-b border-[#e9ebec] hover:bg-[rgba(233,235,236,0.12)] last:border-b-0',
+                  'group border-b border-[#e9ebec] hover:bg-[rgba(233,235,236,0.12)] last:border-b-0',
                   striped && 'bg-[rgba(233,235,236,0.2)]'
                 )}>
-                  <TableCell className="px-4 py-3 text-[14px] leading-[22px] text-[#323232]">{r.name}</TableCell>
+                  <TableCell className={cn("px-4 py-3 text-[14px] leading-[22px] text-[#323232] sticky left-0 z-10 bg-white group-hover:bg-[#fbfbfc]", striped && "bg-[#f8f9f9]")}>{r.name}</TableCell>
                   <TableCell className="px-4 py-3 font-mono text-sm text-[#323232]">{r.code}</TableCell>
                   <TableCell className="px-4 py-3 text-right text-[14px] leading-[22px] text-[#323232]">{r.sortOrder}</TableCell>
                   <TableCell className="px-4 py-3 text-[14px] leading-[22px] text-[#323232]">{r.remark || '—'}</TableCell>
                   <TableCell className="px-4 py-3 text-[14px] leading-[22px] text-[#323232]">{r.createdAt}</TableCell>
-                  <TableCell className="px-4 py-3 text-right">
+                  <TableCell className={cn("px-4 py-3 text-right sticky right-0 z-10 bg-white group-hover:bg-[#fbfbfc]", striped && "bg-[#f8f9f9]")}>
                     <div className="flex items-center justify-end gap-2">
                       <button type="button" className="inline-flex h-6 min-w-[48px] items-center justify-center rounded-lg border border-[#e9ebec] bg-white px-3 text-xs leading-5 text-[#323232] transition-colors hover:bg-[#f9f9f9] cursor-pointer" onClick={() => handleEdit(r)}>编辑</button>
                       <button type="button" className="inline-flex h-6 min-w-[48px] items-center justify-center rounded-lg border border-[#e9ebec] bg-white px-3 text-xs leading-5 text-[#323232] transition-colors hover:bg-[#f9f9f9] cursor-pointer">菜单权限</button>
@@ -206,30 +206,33 @@ export default function RoleManagementPage() {
       </div>
 
       <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>{editRole ? '编辑角色' : '新增角色'}</SheetTitle>
+        <SheetContent className="sm:max-w-[400px] overflow-y-auto p-0">
+          <SheetHeader className="border-b border-[#e9ebec] p-4 pb-3">
+            <SheetTitle className="text-sm font-semibold text-[#323232]">{editRole ? '编辑角色' : '新增角色'}</SheetTitle>
           </SheetHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>角色名称 *</Label>
-              <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label>角色标识 *</Label>
-              <Input value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))} disabled={!!editRole} />
-            </div>
-            <div className="space-y-2">
-              <Label>显示顺序</Label>
-              <Input type="number" value={form.sortOrder} onChange={e => setForm(f => ({ ...f, sortOrder: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label>备注</Label>
-              <Input value={form.remark} onChange={e => setForm(f => ({ ...f, remark: e.target.value }))} />
+          <div className="flex-1 overflow-y-auto px-4 py-4">
+            <div className="flex flex-col gap-[18px]">
+              <div className="flex flex-col gap-1">
+                <Label className="text-sm font-normal text-[#646464]"><span className="text-[#eb2e2e]">*</span> 角色名称</Label>
+                <Input className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]" placeholder="请输入角色名称" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label className="text-sm font-normal text-[#646464]"><span className="text-[#eb2e2e]">*</span> 角色标识</Label>
+                <Input className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]" placeholder="请输入角色标识" value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))} disabled={!!editRole} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label className="text-sm font-normal text-[#646464]">显示顺序</Label>
+                <Input className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]" placeholder="请输入显示顺序" type="number" value={form.sortOrder} onChange={e => setForm(f => ({ ...f, sortOrder: e.target.value }))} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label className="text-sm font-normal text-[#646464]">备注</Label>
+                <Input className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]" placeholder="请输入备注" value={form.remark} onChange={e => setForm(f => ({ ...f, remark: e.target.value }))} />
+              </div>
             </div>
           </div>
-          <SheetFooter>
-            <Button onClick={handleSave}>保存</Button>
+          <SheetFooter className="flex-row justify-end gap-2 border-t border-[#e9ebec] px-4 py-3">
+            <Button variant="ghost" className="h-8 rounded-lg border border-[#f9f9f9] bg-[#e9ebec] px-3 text-sm text-[#323232] hover:bg-[#dcdfe1]" onClick={() => setDrawerOpen(false)}>取消</Button>
+            <Button className="h-8 rounded-lg border border-[#ffa05c] bg-[#ff7f32] px-3 text-sm text-[#f9f9f9] hover:bg-[#e8722d]" onClick={handleSave}>保存</Button>
           </SheetFooter>
         </SheetContent>
       </Sheet>

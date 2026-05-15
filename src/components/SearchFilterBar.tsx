@@ -446,7 +446,7 @@ export function SearchFilterBar({
         )}
 
         {/* 快捷搜索栏 */}
-        <div className="flex h-9 min-w-0 max-w-xl flex-1 overflow-hidden rounded-lg border border-[#e9ebec] bg-white transition-[box-shadow,border-color] focus-within:border-[#ff7f32] focus-within:ring-2 focus-within:ring-[#ff7f32]/20">
+        <div className="flex h-9 min-w-0 max-w-[480px] flex-1 overflow-hidden rounded-lg border border-[#e9ebec] bg-white transition-[box-shadow,border-color] focus-within:border-[#ff7f32] focus-within:ring-2 focus-within:ring-[#ff7f32]/20">
           {/* 字段选择器 */}
           {searchFields.length > 1 && (
             <Select

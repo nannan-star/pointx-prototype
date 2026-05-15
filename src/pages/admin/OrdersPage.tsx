@@ -173,7 +173,7 @@ export default function OrdersPage() {
         <Table className="text-sm">
           <TableHeader className="[&_tr]:border-b [&_tr]:border-[#e9ebec]">
             <TableRow className="border-0 hover:bg-transparent">
-              <TableHead className="h-10 rounded-tl-lg bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">企业名称</TableHead>
+              <TableHead className="h-10 sticky left-0 z-20 rounded-tl-lg bg-[#f2f3f4] px-4 text-xs font-semibold text-[#323232]">企业名称</TableHead>
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">订单号</TableHead>
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">标题</TableHead>
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">订单状态</TableHead>
@@ -183,7 +183,7 @@ export default function OrdersPage() {
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">金额</TableHead>
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">资源</TableHead>
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">客户参考(SAP)</TableHead>
-              <TableHead className="h-10 rounded-tr-lg bg-[rgba(233,235,236,0.4)] px-4 text-right text-xs font-semibold text-[#323232]">
+              <TableHead className="h-10 sticky right-0 z-20 rounded-tr-lg bg-[#f2f3f4] px-4 text-right text-xs font-semibold text-[#323232]">
                 <span className="inline-flex w-full items-center justify-end gap-1">
                   操作
                   <Settings2 className="size-3.5 text-[#969696]" aria-hidden />
@@ -204,10 +204,10 @@ export default function OrdersPage() {
                 const striped = globalIndex % 2 === 1
                 return (
                   <TableRow key={o.no} className={cn(
-                    'border-b border-[#e9ebec] hover:bg-[rgba(233,235,236,0.12)] last:border-b-0',
+                    'group border-b border-[#e9ebec] hover:bg-[rgba(233,235,236,0.12)] last:border-b-0',
                     striped && 'bg-[rgba(233,235,236,0.2)]'
                   )}>
-                    <TableCell className="px-4 py-3 text-[14px] leading-[22px] text-[#323232]">{o.customer || '—'}</TableCell>
+                    <TableCell className={cn("px-4 py-3 text-[14px] leading-[22px] text-[#323232] sticky left-0 z-10 bg-white group-hover:bg-[#fbfbfc]", striped && "bg-[#f8f9f9]")}>{o.customer || '—'}</TableCell>
                     <TableCell className="px-4 py-3 font-mono text-xs text-[#323232]">{o.no}</TableCell>
                     <TableCell className="px-4 py-3 text-[14px] leading-[22px] text-[#323232] max-w-[200px] truncate">{o.title || '—'}</TableCell>
                     <TableCell className="px-4 py-3">
@@ -229,7 +229,7 @@ export default function OrdersPage() {
                       </button>
                     </TableCell>
                     <TableCell className="px-4 py-3 font-mono text-xs text-[#323232]">{o.sapRef || '—'}</TableCell>
-                    <TableCell className="px-4 py-3 text-right">
+                    <TableCell className={cn("px-4 py-3 text-right sticky right-0 z-10 bg-white group-hover:bg-[#fbfbfc]", striped && "bg-[#f8f9f9]")}>
                       <button
                         type="button"
                         className="inline-flex h-6 min-w-[48px] items-center justify-center rounded-lg border border-[#e9ebec] bg-white px-3 text-xs leading-5 text-[#323232] transition-colors hover:bg-[#f9f9f9] cursor-pointer"

@@ -143,15 +143,8 @@ export default function SpecsPage() {
 
   return (
     <div className="space-y-4 -m-6 min-h-full bg-[#f9f9f9] p-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
         <h1 className="text-xl font-semibold text-[#323232]">商品规格</h1>
-        <Button
-          onClick={openCreate}
-          className="h-8 shrink-0 gap-1 rounded-lg border border-[#ffa05c] bg-[#ff7f32] px-3 text-sm font-normal text-[#f9f9f9] hover:bg-[#ff6a14]"
-        >
-          <Plus className="size-4" strokeWidth={2.5} />
-          新增
-        </Button>
       </div>
 
       <SearchFilterBar
@@ -160,13 +153,22 @@ export default function SpecsPage() {
         hasActiveFilters={hasActiveFilters}
         onApply={handleApply}
         onReset={handleReset}
+        actions={
+          <Button
+            onClick={openCreate}
+            className="h-9 gap-1 rounded-lg border border-[#ffa05c] bg-[#ff7f32] px-4 text-sm font-normal text-white hover:bg-[#ff6a14]"
+          >
+            <Plus className="size-4" strokeWidth={2.5} />
+            新增
+          </Button>
+        }
       />
 
       <div className="overflow-hidden rounded-lg border border-[#e9ebec] bg-white shadow-[2px_2px_8px_-2px_rgba(0,0,0,0.05)]">
         <Table className="text-sm">
           <TableHeader className="[&_tr]:border-b [&_tr]:border-[#e9ebec]">
             <TableRow className="border-0 hover:bg-transparent">
-              <TableHead className="h-10 rounded-tl-lg bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">规格名称</TableHead>
+              <TableHead className="h-10 sticky left-0 z-20 rounded-tl-lg bg-[#f2f3f4] px-4 text-xs font-semibold text-[#323232]">规格名称</TableHead>
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">PN号</TableHead>
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">商品</TableHead>
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-xs font-semibold text-[#323232]">商品规格</TableHead>
@@ -175,7 +177,7 @@ export default function SpecsPage() {
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-right text-xs font-semibold text-[#323232]">代理商价格</TableHead>
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-right text-xs font-semibold text-[#323232]">终端价格</TableHead>
               <TableHead className="h-10 bg-[rgba(233,235,236,0.4)] px-4 text-right text-xs font-semibold text-[#323232]">库存</TableHead>
-              <TableHead className="h-10 rounded-tr-lg bg-[rgba(233,235,236,0.4)] px-4 text-right text-xs font-semibold text-[#323232]">
+              <TableHead className="h-10 sticky right-0 z-20 rounded-tr-lg bg-[#f2f3f4] px-4 text-right text-xs font-semibold text-[#323232]">
                 <span className="inline-flex w-full items-center justify-end gap-1">
                   操作
                   <Settings2 className="size-3.5 text-[#969696]" aria-hidden />
@@ -189,10 +191,10 @@ export default function SpecsPage() {
               const striped = globalIndex % 2 === 1
               return (
                 <TableRow key={s.id} className={cn(
-                  'border-b border-[#e9ebec] hover:bg-[rgba(233,235,236,0.12)] last:border-b-0',
+                  'group border-b border-[#e9ebec] hover:bg-[rgba(233,235,236,0.12)] last:border-b-0',
                   striped && 'bg-[rgba(233,235,236,0.2)]'
                 )}>
-                  <TableCell className="px-4 py-3 text-[14px] leading-[22px] text-[#323232]">{s.template || '—'}</TableCell>
+                  <TableCell className={cn("px-4 py-3 text-[14px] leading-[22px] text-[#323232] sticky left-0 z-10 bg-white group-hover:bg-[#fbfbfc]", striped && "bg-[#f8f9f9]")}>{s.template || '—'}</TableCell>
                   <TableCell className="px-4 py-3 text-[14px] leading-[22px] text-[#323232]">{s.pn || '—'}</TableCell>
                   <TableCell className="px-4 py-3 text-[14px] leading-[22px] text-[#323232]">{s.product}</TableCell>
                   <TableCell className="px-4 py-3 text-[14px] leading-[22px] text-[#323232]">{s.name}</TableCell>
@@ -201,7 +203,7 @@ export default function SpecsPage() {
                   <TableCell className="px-4 py-3 text-right font-mono text-[14px] leading-[22px] text-[#323232]">{s.agentPrice || '—'}</TableCell>
                   <TableCell className="px-4 py-3 text-right font-mono text-[14px] leading-[22px] text-[#323232]">{s.terminalPrice || '—'}</TableCell>
                   <TableCell className="px-4 py-3 text-right font-mono text-[14px] leading-[22px] text-[#323232]">{s.stock}</TableCell>
-                  <TableCell className="px-4 py-3 text-right">
+                  <TableCell className={cn("px-4 py-3 text-right sticky right-0 z-10 bg-white group-hover:bg-[#fbfbfc]", striped && "bg-[#f8f9f9]")}>
                     <div className="flex justify-end gap-2">
                       <button type="button" className="inline-flex h-6 min-w-[48px] items-center justify-center rounded-lg border border-[#e9ebec] bg-white px-3 text-xs leading-5 text-[#323232] transition-colors hover:bg-[#f9f9f9] cursor-pointer" onClick={() => openEdit(s)}>编辑</button>
                       <button type="button" className="inline-flex h-6 min-w-[48px] items-center justify-center rounded-lg border border-[#e9ebec] bg-white px-3 text-xs leading-5 text-[#323232] transition-colors hover:bg-[#f9f9f9] cursor-pointer" onClick={() => openDetail(s)}>详情</button>

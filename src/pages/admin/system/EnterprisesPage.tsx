@@ -257,38 +257,88 @@ export default function EnterprisesPage() {
       </div>
 
       <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>{editEnt ? '编辑企业' : '新增企业'}</SheetTitle>
+        <SheetContent className="sm:max-w-[400px] flex flex-col p-0">
+          <SheetHeader className="border-b border-[#e9ebec] px-4 py-4">
+            <SheetTitle className="text-sm font-semibold text-[#323232]">{editEnt ? '编辑企业' : '新增企业'}</SheetTitle>
           </SheetHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>企业名称 *</Label>
-              <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label>联系人</Label>
-              <Input value={form.contact} onChange={e => setForm(f => ({ ...f, contact: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label>手机号</Label>
-              <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label>邮箱</Label>
-              <Input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label>所属行业</Label>
-              <Input value={form.industry} onChange={e => setForm(f => ({ ...f, industry: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label>备注</Label>
-              <Input value={form.remark} onChange={e => setForm(f => ({ ...f, remark: e.target.value }))} />
+          <div className="flex-1 overflow-y-auto px-4 py-4">
+            <div className="flex flex-col gap-[18px]">
+              <div className="flex flex-col gap-1">
+                <Label className="text-sm font-normal text-[#646464]">
+                  <span className="text-[#eb2e2e]">*</span> 企业名称
+                </Label>
+                <Input
+                  value={form.name}
+                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="请输入企业名称"
+                  className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label className="text-sm font-normal text-[#646464]">
+                  <span className="text-[#eb2e2e]">*</span> 联系人
+                </Label>
+                <Input
+                  value={form.contact}
+                  onChange={e => setForm(f => ({ ...f, contact: e.target.value }))}
+                  placeholder="请输入联系人"
+                  className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label className="text-sm font-normal text-[#646464]">
+                  <span className="text-[#eb2e2e]">*</span> 手机号
+                </Label>
+                <Input
+                  value={form.phone}
+                  onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                  placeholder="请输入手机号"
+                  className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label className="text-sm font-normal text-[#646464]">邮箱</Label>
+                <Input
+                  value={form.email}
+                  onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                  placeholder="请输入邮箱"
+                  className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label className="text-sm font-normal text-[#646464]">所属行业</Label>
+                <Input
+                  value={form.industry}
+                  onChange={e => setForm(f => ({ ...f, industry: e.target.value }))}
+                  placeholder="请输入所属行业"
+                  className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label className="text-sm font-normal text-[#646464]">备注</Label>
+                <Input
+                  value={form.remark}
+                  onChange={e => setForm(f => ({ ...f, remark: e.target.value }))}
+                  placeholder="请输入备注"
+                  className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]"
+                />
+              </div>
             </div>
           </div>
-          <SheetFooter>
-            <Button onClick={handleSave}>保存</Button>
+          <SheetFooter className="flex-row justify-end gap-2 border-t border-[#e9ebec] px-4 py-3">
+            <Button
+              variant="outline"
+              onClick={() => setDrawerOpen(false)}
+              className="h-8 rounded-lg border border-[#f9f9f9] bg-[#e9ebec] px-3 text-sm text-[#323232] hover:bg-[#dcdfe1]"
+            >
+              取消
+            </Button>
+            <Button
+              onClick={handleSave}
+              className="h-8 rounded-lg border border-[#ffa05c] bg-[#ff7f32] px-3 text-sm text-[#f9f9f9] hover:bg-[#e8722d]"
+            >
+              {editEnt ? '保存' : '新增'}
+            </Button>
           </SheetFooter>
         </SheetContent>
       </Sheet>
