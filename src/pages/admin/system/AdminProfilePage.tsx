@@ -59,6 +59,9 @@ export default function AdminProfilePage() {
     },
   ]
 
+  const [basicSection, orgSection] = infoSections
+  if (!basicSection || !orgSection) return null
+
   return (
     <div className="flex h-full flex-col gap-5">
       {/* User Identity Banner */}
@@ -107,7 +110,7 @@ export default function AdminProfilePage() {
             <h3 className="text-sm font-semibold text-[#1a1a1a]">基本资料</h3>
           </div>
           <div className="space-y-4">
-            {infoSections[0].fields.map((field) => {
+            {basicSection.fields.map((field) => {
               const FieldIcon = field.icon
               return (
                 <div key={field.label} className="flex items-center gap-3">
@@ -133,7 +136,7 @@ export default function AdminProfilePage() {
             <h3 className="text-sm font-semibold text-[#1a1a1a]">组织与范围</h3>
           </div>
           <div className="space-y-4">
-            {infoSections[1].fields.map((field) => {
+            {orgSection.fields.map((field) => {
               const FieldIcon = field.icon
               return (
                 <div key={field.label} className="flex items-center gap-3">

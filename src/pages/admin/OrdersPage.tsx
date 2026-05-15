@@ -96,7 +96,7 @@ export default function OrdersPage() {
   })
 
   const hasActiveFilters = useMemo(() => {
-    return Object.entries(filters).some(([key, val]) => {
+    return Object.entries(filters).some(([, val]) => {
       if (Array.isArray(val)) return val.length > 0
       if (typeof val === 'object' && val !== null) return Object.keys(val).length > 0
       return val !== ''

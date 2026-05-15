@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   Bell,
   ChevronDown,
@@ -55,7 +55,6 @@ function groupHasActiveChild(children: NavChild[], pathname: string): boolean {
 }
 
 export default function ClientLayout() {
-  const navigate = useNavigate()
   const { pathname } = useLocation()
   const { personaId } = useDemoPersona()
   const tenantLabel =

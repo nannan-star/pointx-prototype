@@ -163,6 +163,12 @@ export default function InstanceDetailPage() {
     setEditSelectedPkgs((prev) => prev.filter((p) => p !== pkg))
   }
 
+  function toggleEditPkg(pkg: string) {
+    setEditSelectedPkgs((prev) =>
+      prev.includes(pkg) ? prev.filter((p) => p !== pkg) : [...prev, pkg]
+    )
+  }
+
   return (
     <div className="flex flex-col gap-5">
       {copiedHint ? (
