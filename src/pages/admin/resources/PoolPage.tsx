@@ -2,6 +2,9 @@ import { useState, useMemo } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { resourcePools, type ResourcePoolLine } from '@/data/instance-mock'
+import { NewSpecOrderDrawer } from '@/components/NewSpecOrderDrawer'
+import { RenewResourceDrawer, type RenewTarget } from '@/components/RenewResourceDrawer'
+import { DevConfigDrawer, type ConfigTarget } from '@/components/DevConfigDrawer'
 import { cn } from '@/lib/utils'
 
 interface CompanyGroup {
@@ -25,7 +28,8 @@ function groupByCompany(data: ResourcePoolLine[]): CompanyGroup[] {
 
 export default function PoolPage() {
   const [keyword, setKeyword] = useState('')
-  const allCompanies = useMemo(() => groupByCompany(resourcePools), [])
+  const [poolLines, setPoolLines] = useState<ResourcePoolLine[]>(() => [...resourcePools])
+  const allCompanies = useMemo(() => groupByCompany(poolLines), [poolLines])
   const [selectedName, setSelectedName] = useState(allCompanies[0]?.name ?? '')
   const [companyPage, setCompanyPage] = useState(1)
   const perPage = 7
@@ -57,6 +61,17 @@ export default function PoolPage() {
     setCompanyPage(1)
     const firstCompany = allCompanies[0]
     if (firstCompany) setSelectedName(firstCompany.name)
+  }
+
+  const handleSaveConfig = (target: ConfigTarget, wantsDefault: boolean) => {
+    setPoolLines(prev => prev.map(line => {
+      const sameGroup = line.instance === target.instance && line.product === target.product
+      if (!sameGroup) return line
+      const isTarget = line.spec === target.spec
+      if (isTarget) return { ...line, isDefault: wantsDefault }
+      if (wantsDefault) return { ...line, isDefault: false }
+      return line
+    }))
   }
 
   return (
@@ -157,7 +172,7 @@ export default function PoolPage() {
         </div>
 
         {/* Right: detail */}
-        {selected ? <RightPanel company={selected} /> : (
+        {selected ? <RightPanel company={selected} onSaveConfig={handleSaveConfig} /> : (
           <div className="flex flex-1 items-center justify-center text-[#969696]">
             请在左侧选择一个企业
           </div>
@@ -167,79 +182,136 @@ export default function PoolPage() {
   )
 }
 
-function RightPanel({ company }: { company: CompanyGroup }) {
+function RightPanel({ company, onSaveConfig }: { company: CompanyGroup; onSaveConfig: (target: ConfigTarget, wantsDefault: boolean) => void }) {
   const totalQty = company.lines.reduce((s, l) => s + l.total, 0)
   const usedQty = company.lines.reduce((s, l) => s + l.used, 0)
   const pct = totalQty > 0 ? Math.round((usedQty / totalQty) * 100) : 0
 
+  const [orderOpen, setOrderOpen] = useState(false)
+  const [renewOpen, setRenewOpen] = useState(false)
+  const [renewTarget, setRenewTarget] = useState<RenewTarget | null>(null)
+  const [configOpen, setConfigOpen] = useState(false)
+  const [configTarget, setConfigTarget] = useState<ConfigTarget | null>(null)
+
+  const handleConfig = (l: ResourcePoolLine) => {
+    setConfigTarget({
+      company: l.company,
+      instance: l.instance,
+      product: l.product,
+      spec: l.spec,
+      isDefault: l.isDefault,
+    })
+    setConfigOpen(true)
+  }
+
+  const handleRenew = (l: ResourcePoolLine) => {
+    setRenewTarget({
+      company: l.company,
+      instance: l.instance,
+      product: l.product,
+      spec: l.spec,
+      isDefault: l.isDefault,
+    })
+    setRenewOpen(true)
+  }
+
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-4">
-      {/* Header card */}
-      <div className="flex shrink-0 items-center justify-between rounded-lg border border-[#e9ebec] bg-white px-5 py-4">
-        <div className="flex flex-col gap-1">
-          <span className="text-base font-semibold text-[#323232]">{company.name}</span>
-          <div className="flex items-center gap-[10px] text-xs text-[#969696]">
-            <span>{company.id}</span>
-            <span>· {company.lines.length} 个商品</span>
-            <span>· 已用 {usedQty} / {totalQty} ({pct}%)</span>
+    <>
+      <div className="flex min-w-0 flex-1 flex-col gap-4">
+        {/* Header card */}
+        <div className="flex shrink-0 items-center justify-between rounded-lg border border-[#e9ebec] bg-white px-5 py-4">
+          <div className="flex flex-col gap-1">
+            <span className="text-base font-semibold text-[#323232]">{company.name}</span>
+            <div className="flex items-center gap-[10px] text-xs text-[#969696]">
+              <span>{company.id}</span>
+              <span>· {company.lines.length} 个商品</span>
+              <span>· 已用 {usedQty} / {totalQty} ({pct}%)</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              className="h-7 cursor-pointer rounded-md border border-[#ffa05c] bg-[#ff7f32] px-3 text-xs font-medium text-white hover:bg-[#ff7f32]/90"
+              onClick={() => setOrderOpen(true)}
+            >
+              新规格下单
+            </button>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button className="h-7 cursor-pointer rounded-md border border-[#e9ebec] bg-white px-3 text-xs text-[#666] hover:bg-[#f9f9f9]">
-            导出
-          </button>
-          <button className="h-7 cursor-pointer rounded-md border border-[#ffa05c] bg-[#ff7f32] px-3 text-xs font-medium text-white hover:bg-[#ff7f32]/90">
-            批量续费
-          </button>
+
+        {/* Product table */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-[#e9ebec] bg-white">
+          <div className="flex-1 overflow-auto">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 z-10">
+                <tr className="bg-[#f5f7f9]">
+                  <th className="h-10 w-[140px] px-3 text-left text-[13px] font-semibold text-[#666]">商品名称</th>
+                  <th className="h-10 w-[140px] px-3 text-left text-[13px] font-semibold text-[#666]">商品规格</th>
+                  <th className="h-10 w-[120px] px-3 text-left text-[12px] font-semibold text-[#666]">是否默认规格</th>
+                  <th className="h-10 w-[113px] px-3 text-right text-[12px] font-semibold text-[#666]">总数量</th>
+                  <th className="h-10 w-[113px] px-3 text-right text-[12px] font-semibold text-[#666]">已使用</th>
+                  <th className="h-10 w-[114px] px-3 text-right text-[12px] font-semibold text-[#666]">未使用</th>
+                  <th className="h-10 w-[180px] px-3 text-center text-[13px] font-semibold text-[#666]">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {company.lines.map((l, i) => (
+                  <tr key={i} className="border-b border-[#e9ebec] last:border-b-0 hover:bg-[#fafafa]">
+                    <td className="h-14 max-w-[200px] px-3 text-[13px] font-medium text-[#323232]"><span className="block truncate">{l.product}</span></td>
+                    <td className="h-14 px-3">
+                      <span className="block truncate">
+                        {l.spec}
+                      </span>
+                    </td>
+                    <td className="h-14 px-3">
+                      {l.isDefault ? (
+                        <span className="inline-flex items-center rounded border border-[#ffc799] bg-[#fff3e8] px-2 py-0.5 text-xs font-medium text-[#ff7f32]">是</span>
+                      ) : (
+                        <span className="inline-flex items-center rounded border border-[#dce2e8] bg-[#f0f2f5] px-2 py-0.5 text-xs font-medium text-[#969696]">否</span>
+                      )}
+                    </td>
+                    <td className="h-14 px-3 text-right text-[13px] font-medium text-[#323232]">{l.total}</td>
+                    <td className="h-14 px-3 text-right text-[13px] font-medium text-[#323232]">{l.used}</td>
+                    <td className="h-14 px-3 text-right text-[13px] font-medium text-[#323232]">{l.total - l.used}</td>
+                    <td className="h-14 px-3">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          className="inline-flex h-6 min-w-[48px] items-center justify-center rounded-lg border border-[#e9ebec] bg-white px-3 text-xs leading-5 text-[#323232] transition-colors hover:bg-[#f9f9f9] cursor-pointer"
+                          onClick={() => handleConfig(l)}
+                        >
+                          配置
+                        </button>
+                        <button
+                          className="inline-flex h-6 min-w-[48px] items-center justify-center rounded-lg border border-[#e9ebec] bg-white px-3 text-xs leading-5 text-[#323232] transition-colors hover:bg-[#f9f9f9] cursor-pointer"
+                          onClick={() => handleRenew(l)}
+                        >
+                          续费
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      {/* Product table */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-[#e9ebec] bg-white">
-        <div className="flex-1 overflow-auto">
-          <table className="w-full text-sm">
-            <thead className="sticky top-0 z-10">
-              <tr className="bg-[#f5f7f9]">
-                <th className="h-10 max-w-[200px] px-3 text-left text-[13px] font-semibold text-[#666]">商品名称</th>
-                <th className="h-10 w-[140px] px-3 text-left text-[13px] font-semibold text-[#666]">商品规格</th>
-                <th className="h-10 w-[92px] px-3 text-left text-[12px] font-semibold text-[#666]">是否默认规格</th>
-                <th className="h-10 w-[113px] px-3 text-right text-[12px] font-semibold text-[#666]">总数量</th>
-                <th className="h-10 w-[113px] px-3 text-right text-[12px] font-semibold text-[#666]">已使用</th>
-                <th className="h-10 w-[114px] px-3 text-right text-[12px] font-semibold text-[#666]">未使用</th>
-                <th className="h-10 w-[100px] px-3 text-center text-[13px] font-semibold text-[#666]">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {company.lines.map((l, i) => (
-                <tr key={i} className="border-b border-[#e9ebec] last:border-b-0 hover:bg-[#fafafa]">
-                  <td className="h-14 max-w-[200px] px-3 text-[13px] font-medium text-[#323232]"><span className="block truncate">{l.product}</span></td>
-                  <td className="h-14 px-3">
-                    <span className="inline-flex items-center rounded border border-[#dce2e8] bg-[#eef1f5] px-2 py-0.5 text-xs text-[#666]">
-                      {l.spec}
-                    </span>
-                  </td>
-                  <td className="h-14 px-3">
-                    {l.isDefault ? (
-                      <span className="inline-flex items-center rounded border border-[#ffc799] bg-[#fff3e8] px-2 py-0.5 text-xs font-medium text-[#ff7f32]">是</span>
-                    ) : (
-                      <span className="inline-flex items-center rounded border border-[#dce2e8] bg-[#f0f2f5] px-2 py-0.5 text-xs font-medium text-[#969696]">否</span>
-                    )}
-                  </td>
-                  <td className="h-14 px-3 text-right text-[13px] font-medium text-[#323232]">{l.total}</td>
-                  <td className="h-14 px-3 text-right text-[13px] font-medium text-[#323232]">{l.used}</td>
-                  <td className="h-14 px-3 text-right text-[13px] font-medium text-[#323232]">{l.total - l.used}</td>
-                  <td className="h-14 px-3">
-                    <div className="flex items-center justify-center gap-3">
-                      <button className="cursor-pointer text-[13px] font-medium text-[#ff7f32] hover:underline">配置</button>
-                      <button className="cursor-pointer text-base leading-none text-[#666] hover:text-[#323232]">⋯</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+      <NewSpecOrderDrawer
+        open={orderOpen}
+        onOpenChange={setOrderOpen}
+        fixedCompany={company.name}
+      />
+      <RenewResourceDrawer
+        open={renewOpen}
+        onOpenChange={setRenewOpen}
+        target={renewTarget}
+      />
+      <DevConfigDrawer
+        open={configOpen}
+        onOpenChange={setConfigOpen}
+        target={configTarget}
+        onSave={onSaveConfig}
+      />
+    </>
   )
 }

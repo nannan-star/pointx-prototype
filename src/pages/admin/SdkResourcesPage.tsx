@@ -194,10 +194,6 @@ export default function SdkResourcesPage({ isClientView = false }: SdkResourcesP
     setRevealedCodes(next)
   }
 
-  const pageSub = isClientView
-    ? '大客户视图不展示企业名称、实例名称；注册码仅已激活账号具备，列表默认遮挡，请点击眼睛图标查看完整码。'
-    : 'SDK 履约资源明细；注册码仅已激活账号具备，列表默认密文，请点击眼睛图标显示明文。'
-
   const detailRow = detailKey ? sdkResources.find((r) => r.sdkResKey === detailKey) : undefined
   const colCount = isClientView ? 14 : 16
 
@@ -205,7 +201,6 @@ export default function SdkResourcesPage({ isClientView = false }: SdkResourcesP
     <div className="space-y-4 -m-6 min-h-full bg-[#f9f9f9] p-6">
       <div>
         <h1 className="text-xl font-semibold text-[#323232]">SDK 资源</h1>
-        <p className="text-sm text-[#969696] mt-1">{pageSub}</p>
       </div>
 
       <SearchFilterBar

@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Search, Settings2 } from 'lucide-react'
+import { Plus, Settings2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
   Table,
   TableBody,
@@ -21,28 +20,75 @@ import {
 import { instances, type Instance } from '@/data/instance-mock'
 import { InstanceCreateDrawer } from '@/components/InstanceCreateDrawer'
 import { InstanceEditDrawer } from '@/components/InstanceEditDrawer'
+import { SearchFilterBar, type FilterValue, type DateRange } from '@/components/SearchFilterBar'
 import { cn } from '@/lib/utils'
+
+/* ---- 搜索 / 筛选字段配置 ---- */
+const SEARCH_FIELDS = [
+  { key: 'company', label: '企业名称', type: 'text' as const, placeholder: '请输入企业名称' },
+  { key: 'name', label: '实例名称', type: 'text' as const, placeholder: '请输入实例名称' },
+  { key: 'accountPrefix', label: '帐号前缀', type: 'text' as const, placeholder: '请输入帐号前缀' },
+  { key: 'packageNames', label: 'SDK套餐', type: 'text' as const, placeholder: '请输入套餐名称' },
+]
+
+const FILTER_FIELDS = [
+  { key: 'company', label: '企业名称', type: 'text' as const, placeholder: '请输入企业名称' },
+  { key: 'name', label: '实例名称', type: 'text' as const, placeholder: '请输入实例名称' },
+  { key: 'accountPrefix', label: '帐号前缀', type: 'text' as const, placeholder: '请输入帐号前缀' },
+  { key: 'packageNames', label: 'SDK套餐', type: 'text' as const, placeholder: '请输入套餐名称' },
+]
+
+/* ---- Filter helpers ---- */
+
+function cellString(r: Instance, key: string): string {
+  const v = (r as unknown as Record<string, unknown>)[key]
+  if (Array.isArray(v)) return v.join(' ')
+  return typeof v === 'string' ? v : ''
+}
+
+function matchField(value: FilterValue, cellStr: string): boolean {
+  if (typeof value === 'string') {
+    return cellStr.toLowerCase().includes(value.trim().toLowerCase())
+  }
+  return true
+}
 
 export default function InstancesPage() {
   const [rows, setRows] = useState<Instance[]>(instances)
   const [createOpen, setCreateOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<string | null>(null)
   const [guideName, setGuideName] = useState<string | null>(null)
-  const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
+  /* applied filter state */
+  const [appliedSearchField, setAppliedSearchField] = useState('company')
+  const [appliedSearchValue, setAppliedSearchValue] = useState<FilterValue>('')
+  const [appliedFilters, setAppliedFilters] = useState<Record<string, FilterValue>>({})
+
+  const hasActiveFilters = useMemo(() => {
+    return FILTER_FIELDS.some((f) => {
+      const v = appliedFilters[f.key]
+      if (Array.isArray(v)) return v.length > 0
+      if (typeof v === 'object' && v !== null && ('from' in v || 'to' in v)) {
+        const r = v as DateRange
+        return !!(r.from || r.to)
+      }
+      return typeof v === 'string' && v.trim() !== ''
+    })
+  }, [appliedFilters])
+
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return rows
-    return rows.filter(
-      (r) =>
-        r.company.toLowerCase().includes(q) ||
-        r.name.toLowerCase().includes(q) ||
-        (r.accountPrefix ?? '').toLowerCase().includes(q) ||
-        r.packageNames.some((n) => n.toLowerCase().includes(q))
-    )
-  }, [rows, query])
+    return rows.filter((r) => {
+      if (!matchField(appliedSearchValue, cellString(r, appliedSearchField))) return false
+      for (const f of FILTER_FIELDS) {
+        const v = appliedFilters[f.key]
+        if (v === undefined) continue
+        if (!matchField(v, cellString(r, f.key))) return false
+      }
+      return true
+    })
+  }, [rows, appliedSearchField, appliedSearchValue, appliedFilters])
 
   const total = filtered.length
   const pageCount = Math.max(1, Math.ceil(total / pageSize))
@@ -52,13 +98,8 @@ export default function InstancesPage() {
     [filtered, safePage, pageSize]
   )
 
-  useEffect(() => {
-    setPage(1)
-  }, [query, pageSize])
-
-  useEffect(() => {
-    if (page > pageCount) setPage(pageCount)
-  }, [page, pageCount])
+  useEffect(() => { setPage(1) }, [appliedSearchValue, appliedSearchField, appliedFilters, pageSize])
+  useEffect(() => { if (page > pageCount) setPage(pageCount) }, [page, pageCount])
 
   function handleCreated(name: string) {
     setGuideName(name)
@@ -107,28 +148,30 @@ export default function InstancesPage() {
         </div>
       )}
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full max-w-md">
-          <Search
-            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#969696]"
-            aria-hidden
-          />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Input your content"
-            className="h-9 border-[#e9ebec] bg-white pl-9 text-sm text-[#323232] placeholder:text-[#969696] focus-visible:border-[#ff7f32] focus-visible:ring-[#ff7f32]/25"
-          />
-        </div>
-        <Button
-          type="button"
-          onClick={() => setCreateOpen(true)}
-          className="h-8 shrink-0 gap-1 rounded-lg border border-[#ffa05c] bg-[#ff7f32] px-3 text-sm font-normal text-[#f9f9f9] hover:bg-[#ff6a14]"
-        >
-          <Plus className="size-4" strokeWidth={2.5} />
-          新增实例
-        </Button>
-      </div>
+      <SearchFilterBar
+        searchFields={SEARCH_FIELDS}
+        filterFields={FILTER_FIELDS}
+        hasActiveFilters={hasActiveFilters}
+        onApply={({ searchField, searchValue, filters }) => {
+          setAppliedSearchField(searchField)
+          setAppliedSearchValue(searchValue)
+          setAppliedFilters(filters)
+        }}
+        onReset={() => {
+          setAppliedSearchField('company')
+          setAppliedSearchValue('')
+          setAppliedFilters({})
+        }}
+        actions={
+          <Button
+            onClick={() => setCreateOpen(true)}
+            className="h-9 shrink-0 gap-1 rounded-lg border border-[#ffa05c] bg-[#ff7f32] px-4 text-sm font-normal text-white hover:bg-[#ff6a14]"
+          >
+            <Plus className="size-4" strokeWidth={2.5} />
+            新增实例
+          </Button>
+        }
+      />
 
       <div className="overflow-hidden rounded-lg border border-[#e9ebec] bg-white shadow-[2px_2px_8px_-2px_rgba(0,0,0,0.05)]">
         <Table className="text-sm">
@@ -226,21 +269,13 @@ export default function InstancesPage() {
                   <TableCell className={cn("px-4 py-3 text-right sticky right-0 z-10 bg-white group-hover:bg-[#fbfbfc]", striped && "bg-[#f8f9f9]")}>
                     <div className="flex justify-end gap-2">
                       {configured ? (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => setEditTarget(r.name)}
-                            className="inline-flex h-6 min-w-[48px] items-center justify-center rounded-lg border border-[#e9ebec] bg-white px-3 text-xs leading-5 text-[#323232] transition-colors hover:bg-[#f9f9f9] cursor-pointer"
-                          >
-                            编辑
-                          </button>
-                          <Link
-                            to={`/admin/instances/detail?name=${encodeURIComponent(r.name)}`}
-                            className="inline-flex h-6 min-w-[48px] items-center justify-center rounded-lg border border-[#e9ebec] bg-white px-3 text-xs leading-5 text-[#323232] transition-colors hover:bg-[#f9f9f9]"
-                          >
-                            详情
-                          </Link>
-                        </>
+                        <button
+                          type="button"
+                          onClick={() => setEditTarget(r.name)}
+                          className="inline-flex h-6 min-w-[48px] items-center justify-center rounded-lg border border-[#e9ebec] bg-white px-3 text-xs leading-5 text-[#323232] transition-colors hover:bg-[#f9f9f9] cursor-pointer"
+                        >
+                          编辑
+                        </button>
                       ) : (
                         <button
                           type="button"

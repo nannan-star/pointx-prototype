@@ -59,9 +59,6 @@ export default function DashboardPage() {
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-xl font-bold text-[#1a1a1a]">资源看板</h1>
-          <p className="mt-1 text-sm text-[#969696]">
-            企业资源总览 — 余量、区域激活与活跃趋势
-          </p>
         </div>
         <Link to="/client/trade/reconciliation">
           <Button

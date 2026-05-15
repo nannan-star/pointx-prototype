@@ -264,7 +264,7 @@ export default function InstanceDetailPage() {
       {/* 基本信息 */}
       <div className="rounded-lg border border-[#e9ebec] bg-white px-6 py-5 shadow-[2px_2px_8px_-2px_rgba(0,0,0,0.05)]">
         <div className="flex flex-col gap-4">
-          <SectionTitle title="基本信息" subtitle="企业、实例、履约参数" />
+          <SectionTitle title="基本信息" />
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-4 lg:flex-row lg:gap-6">
               <FieldBlock label="企业名称">{inst.company}</FieldBlock>
@@ -306,14 +306,12 @@ export default function InstanceDetailPage() {
         <div className="flex flex-col gap-4">
           <SectionTitle
             title="接入凭证"
-            subtitle="重置后旧密钥立即失效；明文仅在重置时展示一次。"
           />
           <div className="flex flex-col gap-4">
             <div className="grid gap-4 md:grid-cols-2">
                 <div className="flex items-center gap-4 rounded-md bg-[#f7f8f9] px-4 py-3">
                   <div className="w-[140px] shrink-0 space-y-0.5 whitespace-nowrap">
                     <p className="text-[13px] font-semibold text-[#323232]">应用标识 AK</p>
-                    <p className="text-[11px] text-[#969696]">公钥 · 可用于客户端识别</p>
                   </div>
                   <p className="min-w-0 flex-1 truncate font-mono text-sm font-medium text-[#666]">
                     {inst.appKey || '—'}
@@ -330,7 +328,6 @@ export default function InstanceDetailPage() {
                 <div className="flex items-center gap-3 rounded-md bg-[#f7f8f9] px-4 py-3">
                   <div className="w-[140px] shrink-0 space-y-0.5 whitespace-nowrap">
                     <p className="text-[13px] font-semibold text-[#323232]">应用密钥 SK</p>
-                    <p className="text-[11px] text-[#969696]">私钥 · 切勿泄露 · 仅重置时可见一次</p>
                   </div>
                   <p className="min-w-0 flex-1 truncate font-mono text-sm font-medium text-[#666]">
                     {showSk ? inst.appSecret : maskSecret(inst.appSecret)}
@@ -357,7 +354,6 @@ export default function InstanceDetailPage() {
                 <div className="flex items-center gap-4 rounded-md bg-[#f7f8f9] px-4 py-3">
                   <div className="w-[140px] shrink-0 space-y-0.5 whitespace-nowrap">
                     <p className="text-[13px] font-semibold text-[#323232]">实例标识 SIK</p>
-                    <p className="text-[11px] text-[#969696]">实例唯一标识 · 随实例同生命周期</p>
                   </div>
                   <p className="min-w-0 flex-1 truncate font-mono text-sm font-medium text-[#666]">
                     {inst.sik || '—'}
@@ -374,7 +370,6 @@ export default function InstanceDetailPage() {
                 <div className="flex items-center gap-3 rounded-md bg-[#f7f8f9] px-4 py-3">
                   <div className="w-[140px] shrink-0 space-y-0.5 whitespace-nowrap">
                     <p className="text-[13px] font-semibold text-[#323232]">实例密钥 SIS</p>
-                    <p className="text-[11px] text-[#969696]">实例签名密钥 · 服务端签名校验</p>
                   </div>
                   <p className="min-w-0 flex-1 truncate font-mono text-sm font-medium text-[#666]">
                     {showSis ? inst.sis : maskSecret(inst.sis)}
@@ -437,7 +432,7 @@ export default function InstanceDetailPage() {
 
             {boundList.length === 0 ? (
               <p className="rounded-lg border border-dashed border-[#e9ebec] bg-[#f9f9f9] px-4 py-8 text-center text-sm text-[#969696]">
-                暂无绑定套餐，可点击「+ 绑定套餐」在编辑实例中完成配置（演示）。
+                暂无绑定套餐，可点击「+ 绑定套餐」在编辑实例中完成配置。
               </p>
             ) : (
               <div className="flex flex-col gap-3">
@@ -475,7 +470,7 @@ export default function InstanceDetailPage() {
                           <DropdownMenuContent align="end" className="border-[#e9ebec]">
                             <DropdownMenuItem
                               className="cursor-pointer"
-                              onClick={() => showCopied('解绑为演示操作，未实际修改数据')}
+                              onClick={() => showCopied('已解绑')}
                             >
                               解绑套餐
                             </DropdownMenuItem>

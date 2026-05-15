@@ -399,7 +399,6 @@ export function SearchFilterBar({
             >
               <div className="border-b border-[#e9ebec] bg-white px-4 py-3">
                 <p className="text-sm font-semibold text-[#323232]">组合筛选</p>
-                <p className="mt-0.5 text-xs text-[#969696]">多项同时填写时为「且」关系；点「筛选」后生效。</p>
               </div>
               <div className="grid grid-cols-2 gap-x-4 gap-y-3 p-4 sm:grid-cols-3 lg:grid-cols-4">
                 {allFilterFields.map((field) => (

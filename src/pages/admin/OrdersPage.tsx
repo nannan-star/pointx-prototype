@@ -156,9 +156,6 @@ export default function OrdersPage() {
     <div className="space-y-4 -m-6 min-h-full bg-[#f9f9f9] p-6">
       <div>
         <h1 className="text-xl font-semibold text-[#323232]">订单列表</h1>
-        <p className="text-sm text-[#969696] mt-1">
-          交易中心 · 线下履约与资源池发起订单的汇总视图。
-        </p>
       </div>
 
       <SearchFilterBar

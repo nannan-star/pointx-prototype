@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   User,
   Shield,
@@ -15,26 +15,94 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select'
 import { adminProfile } from '@/data/admin-system-mock'
+
+function VerificationCodeInput({
+  phone,
+  email,
+  verifyType,
+  code,
+  onCodeChange,
+}: {
+  phone: string
+  email: string
+  verifyType: 'phone' | 'email'
+  code: string
+  onCodeChange: (v: string) => void
+}) {
+  const [countdown, setCountdown] = useState(0)
+
+  useEffect(() => {
+    if (countdown <= 0) return
+    const timer = setTimeout(() => setCountdown(c => c - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [countdown])
+
+  const handleSend = useCallback(() => {
+    setCountdown(60)
+  }, [])
+
+  const target = verifyType === 'phone' ? phone : email
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 rounded-lg bg-[#f9f9f9] px-3 py-2.5">
+        {verifyType === 'phone' ? (
+          <Phone className="size-4 shrink-0 text-[#969696]" />
+        ) : (
+          <Mail className="size-4 shrink-0 text-[#969696]" />
+        )}
+        <span className="text-sm text-[#323232]">{target}</span>
+      </div>
+      <div className="flex gap-2">
+        <Input
+          value={code}
+          onChange={e => onCodeChange(e.target.value)}
+          placeholder="请输入验证码"
+          maxLength={6}
+          className="h-8 flex-1 rounded-lg border-[#e9ebec] text-sm placeholder:text-[#969696] focus-visible:border-[#ff7f32] focus-visible:ring-[#ff7f32]/20"
+        />
+        <Button
+          variant="outline"
+          disabled={countdown > 0}
+          onClick={handleSend}
+          className="h-8 shrink-0 rounded-lg border-[#ff7f32] text-[#ff7f32] hover:bg-[#ff7f32]/5 disabled:border-[#e9ebec] disabled:text-[#969696]"
+        >
+          {countdown > 0 ? `${countdown}s` : '获取验证码'}
+        </Button>
+      </div>
+    </div>
+  )
+}
 
 export default function AdminProfilePage() {
   const u = adminProfile
   const [pwdDrawerOpen, setPwdDrawerOpen] = useState(false)
-  const [pwdForm, setPwdForm] = useState({ old: '', new1: '', new2: '' })
-  const [showOld, setShowOld] = useState(false)
+  const [verifyType, setVerifyType] = useState<'phone' | 'email'>('phone')
+  const [code, setCode] = useState('')
+  const [newPwd, setNewPwd] = useState('')
+  const [confirmPwd, setConfirmPwd] = useState('')
   const [showNew, setShowNew] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
 
   function handleChangePassword() {
-    if (!pwdForm.old || !pwdForm.new1 || !pwdForm.new2) return
-    if (pwdForm.new1 !== pwdForm.new2) return
-    if (pwdForm.new1.length < 6) return
+    if (!code || !newPwd || !confirmPwd) return
+    if (newPwd !== confirmPwd) return
+    if (newPwd.length < 6) return
     alert('密码已更新（演示）')
     setPwdDrawerOpen(false)
-    setPwdForm({ old: '', new1: '', new2: '' })
+    setCode('')
+    setNewPwd('')
+    setConfirmPwd('')
+  }
+
+  function resetPwdForm() {
+    setVerifyType('phone')
+    setCode('')
+    setNewPwd('')
+    setConfirmPwd('')
+    setShowNew(false)
+    setShowConfirm(false)
   }
 
   const infoSections = [
@@ -165,13 +233,12 @@ export default function AdminProfilePage() {
                 <Lock className="size-4 text-[#969696]" />
                 <div>
                   <p className="text-sm font-medium text-[#323232]">登录密码</p>
-                  <p className="mt-0.5 text-[11px] text-[#969696]">定期更换保障账户安全</p>
                 </div>
               </div>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setPwdDrawerOpen(true)}
+                onClick={() => { resetPwdForm(); setPwdDrawerOpen(true) }}
                 className="gap-1.5 border-[#e9ebec] text-[#323232] hover:border-[#ff7f32] hover:text-[#ff7f32]"
               >
                 修改
@@ -184,126 +251,115 @@ export default function AdminProfilePage() {
 
       {/* Password Change Drawer */}
       <Sheet open={pwdDrawerOpen} onOpenChange={setPwdDrawerOpen}>
-        <SheetContent className="w-[420px]">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              <div className="flex size-7 items-center justify-center rounded-lg bg-[#ff7f32]/10">
-                <Lock className="size-3.5 text-[#ff7f32]" />
-              </div>
-              修改密码
-            </SheetTitle>
+        <SheetContent className="sm:max-w-[400px] overflow-y-auto p-0">
+          <SheetHeader className="border-b border-[#e9ebec] p-4 pb-3">
+            <SheetTitle className="text-sm font-semibold text-[#323232]">修改密码</SheetTitle>
           </SheetHeader>
-          <div className="space-y-5 py-6">
-            <p className="text-xs text-[#969696]">
-              为保障账户安全，修改密码需验证身份。支持手机号或邮箱验证码校验。
-            </p>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs text-[#646464]">当前密码</Label>
-              <div className="relative">
-                <Input
-                  type={showOld ? 'text' : 'password'}
-                  value={pwdForm.old}
-                  onChange={e => setPwdForm(f => ({ ...f, old: e.target.value }))}
-                  className="h-9 border-[#e9ebec] pr-10 focus-visible:border-[#ff7f32] focus-visible:ring-[#ff7f32]/20"
-                  placeholder="请输入当前密码"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowOld(!showOld)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#969696] hover:text-[#646464]"
-                >
-                  {showOld ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs text-[#646464]">新密码</Label>
-              <div className="relative">
-                <Input
-                  type={showNew ? 'text' : 'password'}
-                  value={pwdForm.new1}
-                  onChange={e => setPwdForm(f => ({ ...f, new1: e.target.value }))}
-                  className="h-9 border-[#e9ebec] pr-10 focus-visible:border-[#ff7f32] focus-visible:ring-[#ff7f32]/20"
-                  placeholder="至少 6 位字符"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNew(!showNew)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#969696] hover:text-[#646464]"
-                >
-                  {showNew ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs text-[#646464]">确认新密码</Label>
-              <div className="relative">
-                <Input
-                  type={showConfirm ? 'text' : 'password'}
-                  value={pwdForm.new2}
-                  onChange={e => setPwdForm(f => ({ ...f, new2: e.target.value }))}
-                  className="h-9 border-[#e9ebec] pr-10 focus-visible:border-[#ff7f32] focus-visible:ring-[#ff7f32]/20"
-                  placeholder="再次输入新密码"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirm(!showConfirm)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#969696] hover:text-[#646464]"
-                >
-                  {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="border-t border-[#e9ebec] pt-4">
-              <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-[#969696]">
-                身份验证
-              </p>
-              <div className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-[#646464]">验证方式</Label>
-                  <Select defaultValue="sms">
-                    <SelectTrigger className="h-9 border-[#e9ebec]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sms">手机号验证码（176****8356）</SelectItem>
-                      <SelectItem value="email">邮箱验证码</SelectItem>
-                    </SelectContent>
-                  </Select>
+          <div className="flex-1 overflow-y-auto px-4 py-4">
+            <div className="flex flex-col gap-[18px]">
+              {/* 验证方式切换 */}
+              <div className="flex flex-col gap-1">
+                <Label className="text-sm font-normal text-[#646464]">验证方式</Label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setVerifyType('phone')}
+                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                      verifyType === 'phone'
+                        ? 'border-[#ff7f32] bg-[#fff5ed] text-[#ff7f32]'
+                        : 'border-[#e9ebec] bg-white text-[#646464] hover:border-[#d0d0d0]'
+                    }`}
+                  >
+                    <Phone className="size-3.5" />
+                    手机号验证
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVerifyType('email')}
+                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                      verifyType === 'email'
+                        ? 'border-[#ff7f32] bg-[#fff5ed] text-[#ff7f32]'
+                        : 'border-[#e9ebec] bg-white text-[#646464] hover:border-[#d0d0d0]'
+                    }`}
+                  >
+                    <Mail className="size-3.5" />
+                    邮箱验证
+                  </button>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-[#646464]">验证码</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="请输入验证码"
-                      className="h-9 flex-1 border-[#e9ebec] focus-visible:border-[#ff7f32] focus-visible:ring-[#ff7f32]/20"
-                    />
-                    <Button
-                      variant="outline"
-                      className="h-9 shrink-0 border-[#ff7f32] text-[#ff7f32] hover:bg-[#ff7f32]/5"
-                    >
-                      获取验证码
-                    </Button>
-                  </div>
+              </div>
+
+              {/* 验证码输入 */}
+              <div className="flex flex-col gap-1">
+                <Label className="text-sm font-normal text-[#646464]">
+                  <span className="text-[#eb2e2e]">*</span> 验证码
+                </Label>
+                <VerificationCodeInput
+                  phone={u.phone}
+                  email={u.email}
+                  verifyType={verifyType}
+                  code={code}
+                  onCodeChange={setCode}
+                />
+              </div>
+
+              {/* 新密码 */}
+              <div className="flex flex-col gap-1">
+                <Label className="text-sm font-normal text-[#646464]">
+                  <span className="text-[#eb2e2e]">*</span> 新密码
+                </Label>
+                <div className="relative">
+                  <Input
+                    type={showNew ? 'text' : 'password'}
+                    value={newPwd}
+                    onChange={e => setNewPwd(e.target.value)}
+                    className="h-8 rounded-lg border-[#e9ebec] pr-10 text-sm placeholder:text-[#969696] focus-visible:border-[#ff7f32] focus-visible:ring-[#ff7f32]/20"
+                    placeholder="至少 6 位字符"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNew(!showNew)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#969696] hover:text-[#646464]"
+                  >
+                    {showNew ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* 确认新密码 */}
+              <div className="flex flex-col gap-1">
+                <Label className="text-sm font-normal text-[#646464]">
+                  <span className="text-[#eb2e2e]">*</span> 确认新密码
+                </Label>
+                <div className="relative">
+                  <Input
+                    type={showConfirm ? 'text' : 'password'}
+                    value={confirmPwd}
+                    onChange={e => setConfirmPwd(e.target.value)}
+                    className="h-8 rounded-lg border-[#e9ebec] pr-10 text-sm placeholder:text-[#969696] focus-visible:border-[#ff7f32] focus-visible:ring-[#ff7f32]/20"
+                    placeholder="再次输入新密码"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(!showConfirm)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#969696] hover:text-[#646464]"
+                  >
+                    {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
                 </div>
               </div>
             </div>
           </div>
-          <SheetFooter className="border-t border-[#e9ebec] pt-4">
+          <SheetFooter className="flex-row justify-end gap-2 border-t border-[#e9ebec] px-4 py-3">
             <Button
               variant="outline"
               onClick={() => setPwdDrawerOpen(false)}
-              className="border-[#e9ebec] text-[#323232]"
+              className="h-8 rounded-lg border border-[#f9f9f9] bg-[#e9ebec] px-3 text-sm text-[#323232] hover:bg-[#dcdfe1]"
             >
               取消
             </Button>
             <Button
               onClick={handleChangePassword}
-              className="bg-[#ff7f32] text-white hover:bg-[#ff6a14]"
+              className="h-8 rounded-lg border border-[#ffa05c] bg-[#ff7f32] px-3 text-sm text-[#f9f9f9] hover:bg-[#e8722d]"
             >
               确认修改
             </Button>

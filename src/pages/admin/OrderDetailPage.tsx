@@ -70,9 +70,6 @@ export default function OrderDetailPage() {
       <div className="border rounded-lg p-6 space-y-3">
         <p className="text-xs text-muted-foreground">订单详情</p>
         <h1 className="text-lg font-semibold">{order.title || '订单详情'}</h1>
-        <p className="text-sm text-muted-foreground">
-          超管侧 · 仅展示订单信息（演示，不调用真实支付）。
-        </p>
         <div className="flex items-center gap-2 text-sm">
           <span className="text-muted-foreground">订单号</span>
           <span className="font-mono">{order.no}</span>

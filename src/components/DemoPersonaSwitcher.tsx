@@ -33,7 +33,7 @@ export function DemoPersonaSwitcher({ variant = 'light' }: DemoPersonaSwitcherPr
     >
       <SelectTrigger
         aria-label="切换演示视角"
-        title="在此下拉切换管理员 / 企业租户演示视角"
+       
         className={cn(triggerClass, '[&_svg]:opacity-60')}
       >
         <span className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden text-left">
@@ -46,7 +46,7 @@ export function DemoPersonaSwitcher({ variant = 'light' }: DemoPersonaSwitcherPr
       </SelectTrigger>
       <SelectContent align="end" position="popper" className="w-[min(92vw,280px)] border-[#e9ebec]">
         <SelectGroup>
-          <SelectLabel className="text-xs font-normal text-[#969696]">演示：多客户角色切换</SelectLabel>
+          <SelectLabel className="text-xs font-normal text-[#969696]">切换视角</SelectLabel>
           {DEMO_PERSONA_OPTIONS.map((opt) => (
             <SelectItem
               key={opt.id}

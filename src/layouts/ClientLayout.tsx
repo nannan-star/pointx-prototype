@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   Bell,
+  BookOpen,
   ChevronDown,
   ChevronRight,
   Globe2,
@@ -42,6 +43,7 @@ const navEntries: NavEntry[] = [
       { label: '对账管理', path: '/client/trade/reconciliation' },
     ],
   },
+  { kind: 'link', label: '模块说明', path: '/client/module-docs', icon: BookOpen },
   { kind: 'link', label: '个人信息', path: '/client/profile', icon: User },
 ]
 

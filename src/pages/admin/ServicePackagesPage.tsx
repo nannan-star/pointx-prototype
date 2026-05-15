@@ -289,7 +289,6 @@ export default function ServicePackagesPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-[#969696]">选定后坐标系、挂载点、TLS 与压缩自动带出并置灰不可编辑。</p>
               </div>
               {selectedPreset && (
                 <div className="grid grid-cols-2 gap-3 rounded-lg border border-[#e9ebec] p-3">

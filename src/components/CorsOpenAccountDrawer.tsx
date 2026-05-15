@@ -110,9 +110,6 @@ export function CorsOpenAccountDrawer({ open, onOpenChange, isClientView = false
                   </SelectContent>
                 </Select>
               )}
-              {isClientView && (
-                <p className="text-xs text-[#969696] mt-0.5">大客户视角下固定为当前登录企业。</p>
-              )}
             </div>
 
             <div className="flex flex-col gap-1">
@@ -163,7 +160,6 @@ export function CorsOpenAccountDrawer({ open, onOpenChange, isClientView = false
                 onChange={(e) => setQty(e.target.value)}
                 className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]"
               />
-              <p className="text-xs text-[#969696] mt-0.5">会查询该客户当前选中规格下面实际可用资源数量然后显示在这儿。</p>
             </div>
 
             <div className="flex flex-col gap-1">
@@ -176,14 +172,12 @@ export function CorsOpenAccountDrawer({ open, onOpenChange, isClientView = false
                 className="rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696] resize-none"
               />
             </div>
-
-            <p className="text-xs text-[#969696]">演示规则：账号名将使用该客户在实例模块配置的<strong className="font-medium">帐号前缀</strong>自动生成。</p>
           </div>
         </div>
         <SheetFooter className="flex-row justify-end gap-2 border-t border-[#e9ebec] px-4 py-3">
           <Button
             variant="outline"
-            onClick={() => handleOpenChange(false)}
+            onClick={() => onOpenChange(false)}
             className="h-8 rounded-lg border border-[#f9f9f9] bg-[#e9ebec] px-3 text-sm text-[#323232] hover:bg-[#dcdfe1]"
           >
             取消
@@ -192,7 +186,7 @@ export function CorsOpenAccountDrawer({ open, onOpenChange, isClientView = false
             onClick={handleSubmit}
             className="h-8 rounded-lg border border-[#ffa05c] bg-[#ff7f32] px-3 text-sm text-[#f9f9f9] hover:bg-[#e8722d]"
           >
-            提交
+            开通
           </Button>
         </SheetFooter>
       </SheetContent>

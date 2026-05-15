@@ -42,9 +42,6 @@ export default function ResourceInfoPage() {
       {/* ── Page Header ── */}
       <div>
         <h1 className="text-xl font-bold text-[#1a1a1a]">资源信息</h1>
-        <p className="mt-1 text-sm text-[#969696]">
-          企业资源池配置与各服务节点用量概览
-        </p>
       </div>
 
       {/* ── Company Identity Banner ── */}
@@ -132,9 +129,6 @@ export default function ResourceInfoPage() {
                 </div>
               </div>
             </div>
-            <p className="mt-4 text-[11px] text-[#969696]">
-              敏感字段在生产环境需脱敏展示与审计
-            </p>
           </div>
         )}
       </div>

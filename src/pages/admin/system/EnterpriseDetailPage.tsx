@@ -76,7 +76,6 @@ export default function EnterpriseDetailPage() {
               </div>
             ))}
           </div>
-          <p className="text-xs text-muted-foreground mt-4">证照与证件影像：原型占位，生产见 PRD。</p>
         </div>
       )}
 
@@ -84,7 +83,6 @@ export default function EnterpriseDetailPage() {
         <div className="rounded-lg border bg-white p-6">
           <h3 className="text-sm font-semibold mb-3">资源概况（演示）</h3>
           <p className="text-sm">关联实例数：<strong>{relatedInstances.length}</strong></p>
-          <p className="text-xs text-muted-foreground mt-1">详见资源中心各模块。</p>
         </div>
       )}
 
@@ -102,7 +100,7 @@ export default function EnterpriseDetailPage() {
               <tr className="border-b">
                 <td className="p-3">主账号 / 企业管理员</td>
                 <td className="p-3">{ent.account}</td>
-                <td className="p-3">一期仅主账号</td>
+                <td className="p-3"></td>
               </tr>
             </tbody>
           </table>

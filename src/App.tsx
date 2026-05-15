@@ -24,6 +24,7 @@ import DashboardPage from './pages/client/DashboardPage'
 import ResourceInfoPage from './pages/client/ResourceInfoPage'
 import ReconciliationPage from './pages/client/trade/ReconciliationPage'
 import ClientProfilePage from './pages/client/ClientProfilePage'
+import ModuleDocsPage from './pages/ModuleDocsPage'
 
 function DemoEntryRedirect() {
   const to = optionById(readStoredDemoPersona()).homePath
@@ -53,6 +54,7 @@ export default function App() {
         <Route path="system/menus" element={<MenuManagementPage />} />
         <Route path="system/dict" element={<DictManagementPage />} />
         <Route path="profile" element={<AdminProfilePage />} />
+        <Route path="module-docs" element={<ModuleDocsPage />} />
       </Route>
 
       <Route path="/client" element={<ClientLayout />}>
@@ -65,6 +67,7 @@ export default function App() {
         <Route path="trade/detail" element={<OrderDetailPage />} />
         <Route path="trade/reconciliation" element={<ReconciliationPage />} />
         <Route path="profile" element={<ClientProfilePage />} />
+        <Route path="module-docs" element={<ModuleDocsPage />} />
       </Route>
 
       <Route path="*" element={<DemoEntryRedirect />} />

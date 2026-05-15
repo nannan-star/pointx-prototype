@@ -134,10 +134,6 @@ export default function CorsResourcesPage({ isClientView = false }: CorsResource
   useEffect(() => { setPage(1) }, [appliedSearchValue, appliedSearchField, appliedFilters, pageSize])
   useEffect(() => { if (page > pageCount) setPage(pageCount) }, [page, pageCount])
 
-  const pageSub = isClientView
-    ? '外置 CORS 账号明细；大客户视图不展示企业名称列。'
-    : 'CORS 外置账号资源明细；本页可开通 CORS 账号，并查看账号消耗情况。'
-
   const detailRow = detailAccount ? corsResources.find((r) => r.account === detailAccount) : undefined
   const editRow = editAccount ? corsResources.find((r) => r.account === editAccount) : undefined
   const colCount = isClientView ? 9 : 10
@@ -146,7 +142,6 @@ export default function CorsResourcesPage({ isClientView = false }: CorsResource
     <div className="space-y-4 -m-6 min-h-full bg-[#f9f9f9] p-6">
       <div>
         <h1 className="text-xl font-semibold text-[#323232]">CORS 账号</h1>
-        <p className="text-sm text-[#969696] mt-1">{pageSub}</p>
       </div>
 
       <SearchFilterBar
