@@ -351,6 +351,7 @@ function RightPanel({ company, onSaveConfig }: { company: CompanyGroup; onSaveCo
         open={orderOpen}
         onOpenChange={setOrderOpen}
         fixedCompany={company.name}
+        globalForwarding={companyForwardingLabel(company.lines) === '全球转发'}
       />
       <RenewResourceDrawer
         open={renewOpen}

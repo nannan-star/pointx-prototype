@@ -63,7 +63,7 @@ const navEntries: NavEntry[] = [
       { label: '字典管理', path: '/admin/system/dict' },
     ],
   },
-  { kind: 'link', label: '模块说明', path: '/admin/module-docs', icon: BookOpen },
+  { kind: 'link', label: '需求文档说明', path: '/admin/module-docs', icon: BookOpen },
   { kind: 'link', label: '个人中心', path: '/admin/profile', icon: User },
 ]
 
@@ -227,7 +227,7 @@ export default function AdminLayout() {
           </nav>
         </aside>
 
-        <main className="min-h-0 flex-1 overflow-y-auto bg-[#f9f9f9] p-6">
+        <main className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-[#f9f9f9] p-6">
           <Outlet />
         </main>
       </div>

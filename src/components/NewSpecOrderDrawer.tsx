@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/tooltip'
 import { enterprises } from '@/data/admin-system-mock'
 import { products, specs } from '@/data/config-mock'
-import { instances } from '@/data/instance-mock'
+import { instances, resourcePools } from '@/data/instance-mock'
 
 type ProductType = 'SDK' | 'CORS账号'
 
@@ -23,9 +23,17 @@ interface NewSpecOrderDrawerProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   fixedCompany?: string
+  /** 资源池侧为全球转发时，无需选择服务节点（与 PoolPage 角标逻辑一致） */
+  globalForwarding?: boolean
 }
 
-export function NewSpecOrderDrawer({ open, onOpenChange, fixedCompany }: NewSpecOrderDrawerProps) {
+function companyHasGlobalForwardingInPool(companyName: string): boolean {
+  const name = companyName.trim()
+  if (!name) return false
+  return resourcePools.some((l) => l.company === name && l.forwardingScope === 'global')
+}
+
+export function NewSpecOrderDrawer({ open, onOpenChange, fixedCompany, globalForwarding: globalForwardingProp }: NewSpecOrderDrawerProps) {
   const [company, setCompany] = useState(fixedCompany ?? (enterprises[0]?.name ?? ''))
   const [productType, setProductType] = useState<ProductType>('SDK')
   const [productName, setProductName] = useState(products[0]?.name ?? '')
@@ -43,6 +51,10 @@ export function NewSpecOrderDrawer({ open, onOpenChange, fixedCompany }: NewSpec
   const currentCompany = fixedCompany || company
   const instRow = useMemo(() => instances.find(i => i.company === currentCompany.trim()), [currentCompany])
   const availableNodes = useMemo(() => instRow?.serviceNodes ?? [], [instRow])
+  const globalForwarding = useMemo(() => {
+    if (globalForwardingProp !== undefined) return globalForwardingProp
+    return companyHasGlobalForwardingInPool(currentCompany)
+  }, [globalForwardingProp, currentCompany])
 
   useEffect(() => {
     setSpecId('')
@@ -63,7 +75,7 @@ export function NewSpecOrderDrawer({ open, onOpenChange, fixedCompany }: NewSpec
     if (!instRow) { alert('该客户下暂无实例，请先在实例模块创建'); return }
     if (!productName) { alert('请选择商品'); return }
     if (!specId) { alert('请选择商品规格'); return }
-    if (!serviceNode) { alert('请选择服务节点'); return }
+    if (!globalForwarding && !serviceNode) { alert('请选择服务节点'); return }
 
     if (productType === 'SDK') {
       const qty = parseInt(sdkQty, 10)
@@ -193,37 +205,43 @@ export function NewSpecOrderDrawer({ open, onOpenChange, fixedCompany }: NewSpec
                 </Select>
               </div>
 
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-1">
-                  <Label className="text-sm font-normal text-[#646464]">
-                    <span className="text-[#eb2e2e]">*</span> 服务节点
-                  </Label>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <CircleHelp className="size-3.5 text-[#969696] cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-[240px] text-xs">
-                        服务节点来源于该客户创建实例时选择的节点，只能从已有节点中选择一个作为本次下单的目标节点。
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+              {globalForwarding ? (
+                <div className="rounded-lg border border-[#e3eef9] bg-[#f5f9ff] px-3 py-2.5 text-xs text-[#1565b3]">
+                  该企业为<strong className="font-medium">全球转发</strong>，新规格下单无需选择服务节点。
                 </div>
-                <Select value={serviceNode} onValueChange={setServiceNode}>
-                  <SelectTrigger className="h-8 w-[300px] rounded-lg border-[#e9ebec] bg-white text-sm">
-                    <SelectValue placeholder="请选择服务节点" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableNodes.length > 0 ? (
-                      availableNodes.map(node => (
-                        <SelectItem key={node} value={node}>{node}</SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="__empty" disabled>该客户暂无可用服务节点</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
+              ) : (
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1">
+                    <Label className="text-sm font-normal text-[#646464]">
+                      <span className="text-[#eb2e2e]">*</span> 服务节点
+                    </Label>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <CircleHelp className="size-3.5 text-[#969696] cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[240px] text-xs">
+                          服务节点来源于该客户创建实例时选择的节点，只能从已有节点中选择一个作为本次下单的目标节点。
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <Select value={serviceNode} onValueChange={setServiceNode}>
+                    <SelectTrigger className="h-8 w-[300px] rounded-lg border-[#e9ebec] bg-white text-sm">
+                      <SelectValue placeholder="请选择服务节点" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableNodes.length > 0 ? (
+                        availableNodes.map(node => (
+                          <SelectItem key={node} value={node}>{node}</SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="__empty" disabled>该客户暂无可用服务节点</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               {productType === 'SDK' ? (
                 <div className="flex flex-col gap-1">
