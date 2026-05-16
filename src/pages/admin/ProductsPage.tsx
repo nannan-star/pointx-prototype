@@ -45,6 +45,8 @@ const productFilterFields: FilterFieldConfig[] = [
   },
 ]
 
+const PRODUCT_LINE_OPTIONS = ['云芯产品线'] as const
+
 type DrawerMode = 'create' | 'edit' | 'detail' | null
 
 export default function ProductsPage() {
@@ -61,7 +63,7 @@ export default function ProductsPage() {
   const [formType, setFormType] = useState('SDK')
   const [formPrice, setFormPrice] = useState('')
   const [formBilling, setFormBilling] = useState('连续计费')
-  const [formLine, setFormLine] = useState('')
+  const [formLine, setFormLine] = useState<string>(PRODUCT_LINE_OPTIONS[0])
   const [formRegion, setFormRegion] = useState('')
   const [formSummary, setFormSummary] = useState('')
   const [formDesc, setFormDesc] = useState('')
@@ -113,7 +115,7 @@ export default function ProductsPage() {
 
   const openCreate = () => {
     setFormName(''); setFormType('SDK'); setFormPrice('')
-    setFormBilling('连续计费'); setFormLine(''); setFormRegion('')
+    setFormBilling('连续计费'); setFormLine(PRODUCT_LINE_OPTIONS[0]); setFormRegion('')
     setFormSummary(''); setFormDesc(''); setFormRemark('')
     setDrawerMode('create')
   }
@@ -121,7 +123,9 @@ export default function ProductsPage() {
   const openEdit = (p: Product) => {
     setCurrentProduct(p)
     setFormName(p.name); setFormType(p.type); setFormPrice(p.price)
-    setFormBilling(p.billingMode); setFormLine(p.line); setFormRegion(p.region)
+    setFormBilling(p.billingMode)
+    setFormLine(p.line || p.productLine || PRODUCT_LINE_OPTIONS[0])
+    setFormRegion(p.region)
     setFormSummary(p.summary); setFormDesc(p.description); setFormRemark(p.remark)
     setDrawerMode('edit')
   }
@@ -274,14 +278,13 @@ export default function ProductsPage() {
                   <SelectTrigger className="h-8 w-full rounded-lg border-[#e9ebec] bg-white text-sm text-[#323232]"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="SDK">SDK</SelectItem>
-                    <SelectItem value="外置账号">外置账号</SelectItem>
-                    <SelectItem value="一键固定">一键固定</SelectItem>
-                  </SelectContent>
+                    <SelectItem value="外置账号">CORS账号</SelectItem>
+                 </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-1">
                 <Label className="text-sm font-normal text-[#646464]"><span className="text-[#eb2e2e]">*</span> 价格</Label>
-                <Input value={formPrice} onChange={(e) => setFormPrice(e.target.value)} placeholder="¥0" className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]" />
+                <Input value={formPrice} onChange={(e) => setFormPrice(e.target.value)} placeholder="0" className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]" />
               </div>
               <div className="flex flex-col gap-1">
                 <Label className="text-sm font-normal text-[#646464]">计费方式</Label>
@@ -289,13 +292,23 @@ export default function ProductsPage() {
                   <SelectTrigger className="h-8 w-full rounded-lg border-[#e9ebec] bg-white text-sm text-[#323232]"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="连续计费">连续计费</SelectItem>
-                    <SelectItem value="一次性">一次性</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-1">
                 <Label className="text-sm font-normal text-[#646464]">产品线</Label>
-                <Input value={formLine} onChange={(e) => setFormLine(e.target.value)} className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm" />
+                <Select value={formLine} onValueChange={setFormLine}>
+                  <SelectTrigger className="h-8 w-full rounded-lg border-[#e9ebec] bg-white text-sm text-[#323232]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRODUCT_LINE_OPTIONS.map((line) => (
+                      <SelectItem key={line} value={line}>
+                        {line}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex flex-col gap-1">
                 <Label className="text-sm font-normal text-[#646464]">区域</Label>

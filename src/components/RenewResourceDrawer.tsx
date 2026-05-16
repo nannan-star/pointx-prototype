@@ -3,6 +3,7 @@ import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter,
 } from '@/components/ui/sheet'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 
@@ -47,7 +48,7 @@ export function RenewResourceDrawer({ open, onOpenChange, target }: RenewResourc
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent className="sm:max-w-[420px] overflow-y-auto p-0 flex flex-col">
+      <SheetContent className="sm:max-w-[400px] overflow-y-auto p-0 flex flex-col">
         <SheetHeader className="border-b border-[#e9ebec] px-5 py-4">
           <SheetTitle className="text-base font-semibold text-[#1a1a1a]">资源续费</SheetTitle>
         </SheetHeader>
@@ -67,12 +68,12 @@ export function RenewResourceDrawer({ open, onOpenChange, target }: RenewResourc
                 {([
                   ['企业', target.company],
                   ['实例', target.instance],
-                  ['商品', target.product],
-                  ['规格', target.spec],
                   [
                     '服务节点',
                     target.serviceNodes.length > 0 ? target.serviceNodes.join('、') : '—',
                   ],
+                  ['商品', target.product],
+                  ['规格', target.spec],
                   ['默认规格', target.isDefault ? '是' : '否'],
                 ] as const).map(([label, value]) => (
                   <div key={label} className="flex items-center justify-between px-4 py-2.5">
@@ -105,11 +106,12 @@ export function RenewResourceDrawer({ open, onOpenChange, target }: RenewResourc
 
               <div className="flex flex-col gap-1">
                 <Label className="text-sm font-normal text-[#646464]">备注</Label>
-                <Input
+                <Textarea
                   value={remark}
                   onChange={e => setRemark(e.target.value)}
                   placeholder="例如：客户追加采购"
-                  className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#c5c5c5]"
+                  rows={3}
+                  className="min-h-[60px] resize-y rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]"
                 />
               </div>
             </div>

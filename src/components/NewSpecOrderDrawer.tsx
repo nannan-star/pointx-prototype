@@ -112,7 +112,7 @@ export function NewSpecOrderDrawer({ open, onOpenChange, fixedCompany, globalFor
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent className="sm:max-w-[420px] overflow-y-auto p-0 flex flex-col">
+      <SheetContent className="sm:max-w-[400px] overflow-y-auto p-0 flex flex-col">
         <SheetHeader className="border-b border-[#e9ebec] px-5 py-4">
           <SheetTitle className="text-base font-semibold text-[#1a1a1a]">新规格下单</SheetTitle>
         </SheetHeader>
@@ -154,6 +154,43 @@ export function NewSpecOrderDrawer({ open, onOpenChange, fixedCompany, globalFor
                 </div>
               )}
 
+              {globalForwarding ? (
+                <div className="rounded-lg border border-[#e3eef9] bg-[#f5f9ff] px-3 py-2.5 text-xs text-[#1565b3]">
+                  该企业为<strong className="font-medium">全球转发</strong>，新规格下单无需选择服务节点。
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1">
+                    <Label className="text-sm font-normal text-[#646464]">
+                      <span className="text-[#eb2e2e]">*</span> 服务节点
+                    </Label>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <CircleHelp className="size-3.5 text-[#969696] cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[240px] text-xs">
+                          服务节点来源于该客户创建实例时选择的节点，只能从已有节点中选择一个作为本次下单的目标节点。
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <Select value={serviceNode} onValueChange={setServiceNode}>
+                    <SelectTrigger className="h-8 w-[300px] rounded-lg border-[#e9ebec] bg-white text-sm">
+                      <SelectValue placeholder="请选择服务节点" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableNodes.length > 0 ? (
+                        availableNodes.map(node => (
+                          <SelectItem key={node} value={node}>{node}</SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="__empty" disabled>该客户暂无可用服务节点</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="flex flex-col gap-1">
                 <Label className="text-sm font-normal text-[#646464]">
                   <span className="text-[#eb2e2e]">*</span> 商品类型
@@ -205,43 +242,6 @@ export function NewSpecOrderDrawer({ open, onOpenChange, fixedCompany, globalFor
                 </Select>
               </div>
 
-              {globalForwarding ? (
-                <div className="rounded-lg border border-[#e3eef9] bg-[#f5f9ff] px-3 py-2.5 text-xs text-[#1565b3]">
-                  该企业为<strong className="font-medium">全球转发</strong>，新规格下单无需选择服务节点。
-                </div>
-              ) : (
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-1">
-                    <Label className="text-sm font-normal text-[#646464]">
-                      <span className="text-[#eb2e2e]">*</span> 服务节点
-                    </Label>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <CircleHelp className="size-3.5 text-[#969696] cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="max-w-[240px] text-xs">
-                          服务节点来源于该客户创建实例时选择的节点，只能从已有节点中选择一个作为本次下单的目标节点。
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <Select value={serviceNode} onValueChange={setServiceNode}>
-                    <SelectTrigger className="h-8 w-[300px] rounded-lg border-[#e9ebec] bg-white text-sm">
-                      <SelectValue placeholder="请选择服务节点" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableNodes.length > 0 ? (
-                        availableNodes.map(node => (
-                          <SelectItem key={node} value={node}>{node}</SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="__empty" disabled>该客户暂无可用服务节点</SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
 
               {productType === 'SDK' ? (
                 <div className="flex flex-col gap-1">

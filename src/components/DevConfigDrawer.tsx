@@ -42,7 +42,7 @@ export function DevConfigDrawer({ open, onOpenChange, target, onSave }: DevConfi
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-[420px] overflow-y-auto p-0 flex flex-col">
+      <SheetContent className="sm:max-w-[400px] overflow-y-auto p-0 flex flex-col">
         <SheetHeader className="border-b border-[#e9ebec] px-5 py-4">
           <SheetTitle className="text-base font-semibold text-[#1a1a1a]">开发者配置</SheetTitle>
         </SheetHeader>

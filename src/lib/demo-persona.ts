@@ -16,7 +16,7 @@ export const DEMO_PERSONA_OPTIONS: readonly DemoPersonaOption[] = [
     id: 'admin',
     label: '管理员（平台运营）',
     shortLabel: '管理员',
-    homePath: '/admin/instances',
+    homePath: '/admin/home',
   },
   {
     id: 'client_sg',

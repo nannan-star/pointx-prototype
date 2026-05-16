@@ -68,9 +68,8 @@ export default function ServicePackagesPage() {
   const [formMaxOnline, setFormMaxOnline] = useState('')
   const [formRemark, setFormRemark] = useState('')
 
-  const filteredPresets = packagePortPresets.filter((p) => p.node === formNode)
   const selectedPreset: PackagePortPreset | null =
-    formPresetIdx !== '' ? (filteredPresets[Number(formPresetIdx)] ?? null) : null
+    formPresetIdx !== '' ? (packagePortPresets[Number(formPresetIdx)] ?? null) : null
 
   const hasActiveFilters = useMemo(() =>
     Object.values(filters).some((v) => Array.isArray(v) ? v.length > 0 : false)
@@ -125,7 +124,11 @@ export default function ServicePackagesPage() {
   const openEdit = (pkg: ServicePackage) => {
     setCurrentPkg(pkg)
     setFormName(pkg.name); setFormNode(pkg.node); setFormSpec(pkg.spec)
-    setFormPresetIdx(''); setFormSources(pkg.sources)
+    const presetIdx = packagePortPresets.findIndex(
+      (p) => p.port === pkg.port && p.coord === pkg.coord && p.mount === pkg.mount,
+    )
+    setFormPresetIdx(presetIdx >= 0 ? String(presetIdx) : '')
+    setFormSources(pkg.sources)
     setFormMaxOnline(String(pkg.maxOnline)); setFormRemark(pkg.remark)
     setDrawerMode('edit')
   }
@@ -136,7 +139,7 @@ export default function ServicePackagesPage() {
   }
 
   const handleSave = () => {
-    if (!formName || !formNode) return
+    if (!formName || !formNode || !selectedPreset) return
     const maxVal = parseInt(formMaxOnline, 10)
     if (isNaN(maxVal) || maxVal < 1 || maxVal > 100000) return
     const ts = new Date().toISOString().slice(0, 19).replace('T', ' ')
@@ -261,7 +264,7 @@ export default function ServicePackagesPage() {
               </div>
               <div className="flex flex-col gap-1">
                 <Label className="text-sm font-normal text-[#646464]"><span className="text-[#eb2e2e]">*</span> 服务节点</Label>
-                <Select value={formNode} onValueChange={(v) => { setFormNode(v); setFormPresetIdx('') }}>
+                <Select value={formNode} onValueChange={setFormNode}>
                   <SelectTrigger className="h-8 w-full rounded-lg border-[#e9ebec] bg-white text-sm text-[#323232]"><SelectValue placeholder="请选择" /></SelectTrigger>
                   <SelectContent>
                     {serviceNodes.map((n) => (<SelectItem key={n.code} value={n.name}>{n.name}</SelectItem>))}
@@ -282,10 +285,10 @@ export default function ServicePackagesPage() {
               <div className="flex flex-col gap-1">
                 <Label className="text-sm font-normal text-[#646464]"><span className="text-[#eb2e2e]">*</span> 端口</Label>
                 <Select value={formPresetIdx} onValueChange={setFormPresetIdx}>
-                  <SelectTrigger className="h-8 w-full rounded-lg border-[#e9ebec] bg-white text-sm text-[#323232]"><SelectValue placeholder="选择节点后可选" /></SelectTrigger>
+                  <SelectTrigger className="h-8 w-full rounded-lg border-[#e9ebec] bg-white text-sm text-[#323232]"><SelectValue placeholder="请选择" /></SelectTrigger>
                   <SelectContent>
-                    {filteredPresets.map((p, i) => (
-                      <SelectItem key={`${p.port}-${i}`} value={String(i)}>{p.label} ({p.port})</SelectItem>
+                    {packagePortPresets.map((p, i) => (
+                      <SelectItem key={`${p.port}-${p.label}-${i}`} value={String(i)}>{p.label} ({p.port})</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

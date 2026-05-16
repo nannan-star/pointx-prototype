@@ -6,6 +6,7 @@ import {
   ChevronDown,
   ChevronRight,
   Globe2,
+  Home,
   MapPin,
   Package,
   Server,
@@ -23,6 +24,7 @@ type NavEntry =
   | { kind: 'group'; label: string; icon: typeof Server; children: NavChild[] }
 
 const navEntries: NavEntry[] = [
+  { kind: 'link', label: '首页', path: '/admin/home', icon: Home },
   {
     kind: 'group',
     label: '资源中心',

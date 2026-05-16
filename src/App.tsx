@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import AdminLayout from './layouts/AdminLayout'
 import ClientLayout from './layouts/ClientLayout'
 import { optionById, readStoredDemoPersona } from './lib/demo-persona'
+import AdminHomePage from './pages/admin/AdminHomePage'
 import SdkResourcesPage from './pages/admin/SdkResourcesPage'
 import CorsResourcesPage from './pages/admin/CorsResourcesPage'
 import ServiceNodesPage from './pages/admin/ServiceNodesPage'
@@ -35,7 +36,8 @@ export default function App() {
   return (
     <Routes>
       <Route path="/admin" element={<AdminLayout />}>
-        <Route index element={<Navigate to="instances" replace />} />
+        <Route index element={<Navigate to="home" replace />} />
+        <Route path="home" element={<AdminHomePage />} />
         <Route path="enterprises" element={<EnterprisesPage />} />
         <Route path="enterprises/:id" element={<EnterpriseDetailPage />} />
         <Route path="instances" element={<InstancesPage />} />

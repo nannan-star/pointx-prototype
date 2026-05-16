@@ -5,6 +5,7 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -226,7 +227,7 @@ export default function RoleManagementPage() {
               </div>
               <div className="flex flex-col gap-1">
                 <Label className="text-sm font-normal text-[#646464]">备注</Label>
-                <Input className="h-8 rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]" placeholder="请输入备注" value={form.remark} onChange={e => setForm(f => ({ ...f, remark: e.target.value }))} />
+                <Textarea rows={3} className="rounded-lg border-[#e9ebec] bg-white text-sm placeholder:text-[#969696]" placeholder="请输入备注" value={form.remark} onChange={e => setForm(f => ({ ...f, remark: e.target.value }))} />
               </div>
             </div>
           </div>

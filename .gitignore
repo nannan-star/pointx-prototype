@@ -3,6 +3,7 @@ node_modules/
 
 # Build
 dist/
+docs/
 build/
 *.local
 
@@ -42,3 +43,4 @@ Thumbs.db
 *.swp
 *.swo
 .cache/
+
